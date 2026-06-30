@@ -140,6 +140,7 @@ const ELECTIVES = [
   { id: "INST786", title: "Museum Research Seminar", credits: 3, domains: ["Library, Archives & Culture", "Research & Capstone"], term: "Spring", desc: "Museum Research Seminar.", tags: [] },
   { id: "INST787", title: "Museum Scholarship Practicum", credits: 3, domains: ["Library, Archives & Culture", "Research & Capstone"], term: "Both", desc: "Museum Scholarship Practicum.", tags: [] },
   { id: "INST798", title: "Seminar in Research Methods and Data Analysis", credits: 3, domains: ["Data, AI & Technology", "Research & Capstone"], term: "Both", desc: "Seminar in Research Methods and Data Analysis.", tags: [] },
+  { id: "INST799", title: "Master's Thesis Research", credits: 3, domains: ["Research & Capstone"], term: "Both", desc: "Master's Thesis Research — HCIM thesis pathway (6 credits total across two terms).", tags: [] },
   { id: "INST800", title: "Pre-Candidacy Proseminar", credits: 1, domains: ["Research & Capstone"], term: "Fall", desc: "Pre-Candidacy Proseminar.", tags: [] },
   { id: "INST801", title: "Theoretical Foundations in Information Studies I", credits: 3, domains: ["Library, Archives & Culture"], term: "Fall", desc: "Theoretical Foundations in Information Studies I.", tags: [] },
   { id: "INST802", title: "Pragmatic and Methodological Foundations for Information Studies", credits: 3, domains: ["Library, Archives & Culture"], term: "Spring", desc: "Pragmatic and Methodological Foundations for Information Studies.", tags: [] },
@@ -219,6 +220,7 @@ const CORE_CATALOG_LOOKUP = {
   "INST786": { title: "Museum Research Seminar", type: "elective", credits: 3 },
   "INST787": { title: "Museum Scholarship Practicum", type: "elective", credits: 3 },
   "INST798": { title: "Seminar in Research Methods and Data Analysis", type: "elective", credits: 3 },
+  "INST799": { title: "Master's Thesis Research", type: "HCIM Thesis", credits: 3 },
   "INST802": { title: "Pragmatic and Methodological Foundations for Information Studies", type: "elective", credits: 3 },
   "INST808": { title: "Seminar in Research Methods and Data Analysis", type: "elective", credits: 3 },
   "INST828": { title: "Readings Seminar", type: "elective", credits: 1 },
@@ -1566,7 +1568,7 @@ function App() {
         {!isSelfServiceMode && (
           <div className="bg-white border-b border-slate-200 px-6 py-4 flex flex-col gap-3 shrink-0 z-20 relative shadow-sm w-full">
             <h2 className="text-[12px] font-bold uppercase tracking-widest text-slate-500">
-              Advising Session Setup
+              Academic Advising
             </h2>
             <div className="flex gap-6 items-start">
               <div className="flex flex-col gap-3 w-1/3">
