@@ -1946,8 +1946,59 @@ function App() {
             </div>
           </div>
 
-          {/* PATCH 9: ADVISING NOTES — free-text notes for the session. */}
-          
+          {/* PATCH 8: SESSION INFO — advising-session metadata. Restored:
+              this card (and the Advising Notes card below) were present in
+              state (studentName/advisorName/meetingDate/advisingNotes) and
+              wired into the Excel export, but the JSX rendering them had
+              been dropped from the uploaded file before this refactor —
+              re-added here unchanged, with no new functionality. */}
+          <div className="bg-white rounded-xl overflow-hidden border border-slate-200 shadow-sm">
+            <div className="flex items-center gap-2 px-4 py-3 border-b border-slate-100">
+              <Info size={13} style={{
+              color: "#E51C24"
+            }} />
+              <h2 className="text-[11px] font-bold uppercase tracking-widest text-slate-500">
+                Session Info
+              </h2>
+            </div>
+            <div className="p-3 flex flex-col gap-2.5">
+              <div className="flex flex-col gap-1">
+                <label className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">
+                  Student Name
+                </label>
+                <input type="text" value={studentName} onChange={e => setStudentName(e.target.value)} placeholder="e.g., Jane Terrapin" className="px-2.5 py-1.5 rounded-lg border border-slate-200 text-[12px] outline-none focus:border-slate-400" />
+              </div>
+              <div className="flex flex-col gap-1">
+                <label className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">
+                  Advisor Name
+                </label>
+                <input type="text" value={advisorName} onChange={e => setAdvisorName(e.target.value)} placeholder="e.g., Dr. Smith" className="px-2.5 py-1.5 rounded-lg border border-slate-200 text-[12px] outline-none focus:border-slate-400" />
+              </div>
+              <div className="flex flex-col gap-1">
+                <label className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">
+                  Meeting Date
+                </label>
+                <input type="date" value={meetingDate} onChange={e => setMeetingDate(e.target.value)} className="px-2.5 py-1.5 rounded-lg border border-slate-200 text-[12px] outline-none focus:border-slate-400" />
+              </div>
+            </div>
+          </div>
+
+          {/* PATCH 9: ADVISING NOTES — free-text notes for the session. Restored
+              alongside Session Info above (see comment there). */}
+          <div className="bg-white rounded-xl overflow-hidden border border-slate-200 shadow-sm">
+            <div className="flex items-center gap-2 px-4 py-3 border-b border-slate-100">
+              <Edit2 size={13} style={{
+              color: "#E51C24"
+            }} />
+              <h2 className="text-[11px] font-bold uppercase tracking-widest text-slate-500">
+                Advising Notes
+              </h2>
+            </div>
+            <div className="p-3">
+              <textarea value={advisingNotes} onChange={e => setAdvisingNotes(e.target.value)} placeholder="Notes from this advising session…" rows={4} className="w-full px-2.5 py-2 rounded-lg border border-slate-200 text-[12px] outline-none focus:border-slate-400 resize-y" />
+            </div>
+          </div>
+
           <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden mb-6 p-5">
             <h3 className="text-sm font-semibold text-slate-800 mb-3 flex items-center">
               <span className="mr-2">📅</span> Add Additional Terms
