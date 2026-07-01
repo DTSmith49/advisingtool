@@ -9,22 +9,32 @@
   <script src="https://cdn.tailwindcss.com"></script>
 
   <!-- React + ReactDOM (ESM via importmap) -->
+  <!-- FIX (Code Quality #5): pinned every CDN import to a specific, verified
+       real published version (previously "@latest"/unversioned, which risks
+       silent breaking changes). Versions confirmed to exist on the npm
+       registry and to resolve on esm.sh/unpkg before shipping:
+         react / react-dom  18.3.1  (npm registry, dist-tag history)
+         lucide-react       1.22.0  (npm registry "latest" as of pin date)
+         xlsx-js-style      1.2.0   (npm registry "latest" as of pin date)
+         @babel/standalone  7.29.7  (npm registry, last 7.x release before 8.x) -->
   <script type="importmap">
   {
     "imports": {
-      "react":      "https://esm.sh/react@18?dev",
-      "react/jsx-runtime": "https://esm.sh/react@18/jsx-runtime?dev",
-      "react/jsx-dev-runtime": "https://esm.sh/react@18/jsx-dev-runtime?dev",
-      "react-dom":  "https://esm.sh/react-dom@18?dev",
-      "react-dom/client": "https://esm.sh/react-dom@18/client?dev",
-      "lucide-react": "https://esm.sh/lucide-react@latest?external=react&deps=react@18",
-      "xlsx-js-style": "https://esm.sh/xlsx-js-style@latest"
+      "react":      "https://esm.sh/react@18.3.1?dev",
+      "react/jsx-runtime": "https://esm.sh/react@18.3.1/jsx-runtime?dev",
+      "react/jsx-dev-runtime": "https://esm.sh/react@18.3.1/jsx-dev-runtime?dev",
+      "react-dom":  "https://esm.sh/react-dom@18.3.1?dev",
+      "react-dom/client": "https://esm.sh/react-dom@18.3.1/client?dev",
+      "lucide-react": "https://esm.sh/lucide-react@1.22.0?external=react&deps=react@18.3.1",
+      "xlsx-js-style": "https://esm.sh/xlsx-js-style@1.2.0"
     }
   }
   </script>
 
-  <!-- Babel standalone: transpiles the JSX module below -->
-  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <!-- Babel standalone: transpiles the JSX module below. Pinned to the last
+       published 7.x release (7.29.7) rather than "@latest", which could jump
+       to an untested 8.x major and break transpilation with no visible error. -->
+  <script src="https://unpkg.com/@babel/standalone@7.29.7/babel.min.js"></script>
 
   <style>
     html, body, #root { height: 100%; }
@@ -47,6 +57,21 @@ import { Download, X, Plus, Check, GraduationCap, BarChart3,
 // XLSX.utils / XLSX.writeFile resolve whether the namespace is spread or nested.
 const XLSX = XLSXns.utils ? XLSXns : (XLSXns.default || XLSXns);
 
+// FIX (Error Handling #3): defensively verify the normalization above actually
+// produced a usable XLSX.utils object. If the CDN module shape changes again
+// (as happened previously when a bad xlsx-js-style pin caused a blank page),
+// this logs a clear, early console error instead of letting the failure
+// surface as a cryptic "Cannot read properties of undefined" deep inside
+// buildPlanWorkbook() when the user clicks Export.
+if (typeof XLSX?.utils !== "object" || XLSX.utils === null) {
+  console.error(
+    "[UMD Plan Builder] XLSX.utils is not a valid object after CDN import " +
+    "normalization. The Excel export feature will not work. Check that the " +
+    "pinned xlsx-js-style CDN version still exports a `utils` namespace.",
+    XLSXns
+  );
+}
+
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 // NEW: A program is selected first; MIM exposes tracks + the BS InfoSci alum
@@ -56,8 +81,15 @@ const XLSX = XLSXns.utils ? XLSXns : (XLSXns.default || XLSXns);
 // program-aware blueprint/credit logic with the MIM tracks.
 
 // ─── Master Course Database Catalog ───────────────────────────────────────────
-
-const ELECTIVES = [
+//
+// FIX (Data Integrity #1): this used to be two near-duplicate lists — ELECTIVES
+// (full metadata: title/credits/domains/term/desc/tags) and CORE_CATALOG_LOOKUP
+// (a second title/credits/type map keyed by id) — that had to be hand-kept in
+// sync. COURSE_CATALOG is now the single canonical source of course metadata.
+// CORE_CATALOG_LOOKUP below is DERIVED from it by id, with only the "type"
+// field (badge/category label) supplied via COURSE_TYPE_OVERRIDES, since plain
+// electives don't carry a meaningful "type" in COURSE_CATALOG itself.
+const COURSE_CATALOG = [
   { id: "INFM600", title: "Information Management Ecosystems", credits: 3, domains: ["Custom / Other"], term: "Fall", desc: "Models and methodologies.", tags: ["information management"] },
   { id: "INFM612", title: "Management of Information Projects, Programs, and Services", credits: 3, domains: ["Custom / Other"], term: "Spring", desc: "Management theories and practices.", tags: ["management"] },
   { id: "INFM737", title: "Information Management Capstone Experience", credits: 3, domains: ["Custom / Other"], term: "Both", desc: "Culminating MIM capstone.", tags: ["capstone"] },
@@ -169,118 +201,39 @@ const ELECTIVES = [
   { id: "LBSC751", title: "Research and Teaching Fellowship II", credits: 1, domains: ["Archives & Museum"], term: "Fall", desc: "Teacher training program.", tags: ["fellowship"] },
   { id: "LBSC770", title: "Metadata and Tools for Information Professionals", credits: 3, domains: ["Archives & Museum"], term: "Fall", desc: "Information representation.", tags: ["metadata"] },
 ];
-const CORE_CATALOG_LOOKUP = {
-  "INST600": { title: "Foundations for Librarians and Information Professionals", type: "elective", credits: 3 },
-  "INST604": { title: "Introduction to Archives and Digital Curation", type: "elective", credits: 3 },
-  "INST608D": { title: "Special Topics in Information Studies; Spatial Representation and Analysis for Libraries and ArchivesCollections", type: "elective", credits: 3 },
-  "INST608E": { title: "Special Topics in Information Studies; Designing for Impact: Community-Centered Projects through MonthlyHeritage and Awareness Calendar", type: "elective", credits: 3 },
-  "INST608F": { title: "Special Topics in Information Studies; AI and Music: History and Practice", type: "elective", credits: 3 },
-  "INST608G": { title: "Special Topics in Information Studies; Practical Copyright", type: "elective", credits: 1 },
-  "INST608T": { title: "Special Topics in Information Studies; Trauma-Informed Librarianship", type: "elective", credits: 3 },
-  "INST612": { title: "Information Policy", type: "elective", credits: 3 },
-  "INST614": { title: "Literacy and Inclusion", type: "elective", credits: 3 },
-  "INST616": { title: "Open Source Intelligence", type: "elective", credits: 3 },
-  "INST622": { title: "Information and Universal Usability", type: "elective", credits: 3 },
-  "INST623A": { title: "I Adoption Clinic: Values-Centered AI for Community Organizations", type: "elective", credits: 3 },
-  "INST630": { title: "Programming Human-Centered Interfaces", type: "HCIM Core", credits: 3 },
-  "INST639G": { title: "Special Topics in HCI; UX Strategy", type: "elective", credits: 1 },
-  "INST639R": { title: "Special Topics in HCI; Make it Smart: Human-Centered Design for AI", type: "elective", credits: 3 },
-  "INST639T": { title: "Special Topics in HCI; Social and Psychological Impacts of AI", type: "elective", credits: 3 },
-  "INST641": { title: "Policy and Ethics in Digital Curation", type: "elective", credits: 3 },
-  "INST646": { title: "Principles of Records and Information Management", type: "elective", credits: 3 },
-  "INST652": { title: "Design Thinking and Youth", type: "elective", credits: 3 },
-  "INST653": { title: "Introduction to Museum Scholarship", type: "elective", credits: 3 },
-  "INST662": { title: "Networked Infrastructure", type: "CSRM Track", credits: 3 },
-  "INST663": { title: "Cyberdefense and Ethical Hacking", type: "CSRM Track", credits: 3 },
-  "INST664": { title: "Transforming Unstructured Content with AI", type: "DSDA Track", credits: 3 },
-  "INST680": { title: "Health Informatics", type: "elective", credits: 3 },
-  "INST682": { title: "Personal Health Informatics & Visualization", type: "elective", credits: 3 },
-  "INST702": { title: "Advanced Usability Testing", type: "elective", credits: 3 },
-  "INST703": { title: "Visual Design Studio", type: "elective", credits: 3 },
-  "INST705": { title: "Game Design Studio", type: "elective", credits: 3 },
-  "INST710": { title: "User Experience Research Methods", type: "HCIM Core", credits: 3 },
-  "INST711": { title: "Interaction Design Studio", type: "HCIM Core", credits: 3 },
-  "INST725": { title: "Legal Research for Information Professionals", type: "elective", credits: 3 },
-  "INST726": { title: "Information Governance", type: "CSRM Track", credits: 3 },
-  "INST728E": { title: "Special Topics in Information Studies; Sustainability in Cultural Heritage and Information Science", type: "elective", credits: 3 },
-  "INST728N": { title: "Special Topics in Information Studies; Scholarly Communications Librarianship", type: "elective", credits: 3 },
-  "INST728X": { title: "Special Topics in Information Studies; Designing Technology with Older People", type: "elective", credits: 3 },
-  "INST730": { title: "Games as Emergent Experiences", type: "elective", credits: 3 },
-  "INST731": { title: "Advanced Game, Entertainment, and Media Analytics", type: "elective", credits: 3 },
-  "INST732": { title: "Entertainment Theory", type: "elective", credits: 3 },
-  "INST733": { title: "Database Design", type: "elective", credits: 3 },
-  "INST737": { title: "Data Science Techniques", type: "DSDA Track", credits: 3 },
-  "INST742": { title: "Implementing Digital Curation", type: "elective", credits: 3 },
-  "INST750": { title: "Advanced Data Science", type: "elective", credits: 3 },
-  "INST754": { title: "Data Integration and Preparation for Analytics & Visualization", type: "DSDA Track", credits: 3 },
-  "INST762": { title: "Visual Analytics", type: "DSDA Track", credits: 3 },
-  "INST767": { title: "Big Data Infrastructure", type: "DSDA Track", credits: 3 },
-  "INST776": { title: "HCIM CAPSTONE PROJECT", type: "elective", credits: 3 },
-  "INST785": { title: "Documentation, Collection, and Appraisal of Records", type: "elective", credits: 3 },
-  "INST786": { title: "Museum Research Seminar", type: "elective", credits: 3 },
-  "INST787": { title: "Museum Scholarship Practicum", type: "elective", credits: 3 },
-  "INST798": { title: "Seminar in Research Methods and Data Analysis", type: "elective", credits: 3 },
-  "INST799": { title: "Master's Thesis Research", type: "HCIM Thesis", credits: 3 },
-  "INST802": { title: "Pragmatic and Methodological Foundations for Information Studies", type: "elective", credits: 3 },
-  "INST808": { title: "Seminar in Research Methods and Data Analysis", type: "elective", credits: 3 },
-  "INST828": { title: "Readings Seminar", type: "elective", credits: 1 },
-  "INST878": { title: "Special Topics in Information Studies", type: "elective", credits: 3 },
-  "INST878F": { title: "Special Topics in Information Studies; Literacies for Leadership", type: "elective", credits: 3 },
-  "INST878V": { title: "Special Topics in Information Studies; Practice-Based Research", type: "elective", credits: 3 },
-  "INST878Z": { title: "Special Topics in Information Studies; The Public Intellectual", type: "elective", credits: 3 },
-  "INST607": { title: "Government Information", type: "elective", credits: 3 },
-  "INST608C": { title: "Special Topics in Information Studies; Using Network Visualization to Explore Library and Archive Collections", type: "elective", credits: 3 },
-  "INST608Q": { title: "Special Topics in Information Studies; Consumer Health Informatics", type: "elective", credits: 3 },
-  "INST610": { title: "Information Ethics", type: "elective", credits: 3 },
-  "INST613": { title: "Information and Human Rights", type: "elective", credits: 3 },
-  "INST615": { title: "Information Professionals and the Law", type: "elective", credits: 3 },
-  "INST620": { title: "Diverse Populations, Inclusion, and Information", type: "elective", credits: 3 },
-  "INST624": { title: "Modern Techniques for Software Development", type: "MIM Core", credits: 3 },
-  "INST627": { title: "Foundations of Data Science", type: "DSDA Track", credits: 3 },
-  "INST631": { title: "Fundamentals of Human-Computer Interaction", type: "HCIM Core", credits: 3 },
-  "INST639U": { title: "Special Topics in HCI; Succeeding on Teams and Projects as a UX Professional", type: "elective", credits: 1 },
-  "INST643": { title: "Curation in Cultural Institutions", type: "elective", credits: 3 },
-  "INST650": { title: "Facilitating Youth Learning in Formal and Informal Environments", type: "elective", credits: 3 },
-  "INST651": { title: "Promoting Rich Learning with Technology", type: "elective", credits: 3 },
-  "INST700": { title: "Information Architecture", type: "elective", credits: 3 },
-  "INST704": { title: "Inclusive Design in HCI", type: "elective", credits: 3 },
-  "INST713": { title: "Futures of Work", type: "elective", credits: 3 },
-  "INST728A": { title: "Special Topics in Information Studies; Digital Accessibility Law and Management", type: "elective", credits: 3 },
-  "INST728F": { title: "Special Topics in Information Studies; Generative AI in UX: Transforming UX Practice", type: "elective", credits: 3 },
-  "INST735": { title: "Natural Language Processing", type: "elective", credits: 3 },
-  "INST752": { title: "Location Intelligence", type: "elective", credits: 3 },
-  "INST756": { title: "Information Risk Management", type: "CSRM Track", credits: 3 },
-  "INST760": { title: "Data Visualization", type: "elective", credits: 3 },
-  "INST771": { title: "Foundations of Cybersecurity", type: "CSRM Track", credits: 3 },
-  "INST774": { title: "Advanced Human-Centered Cybersecurity", type: "CSRM Track", credits: 3 },
-  "INST775": { title: "HCIM CAPSTONE PREP", type: "elective", credits: 3 },
-  "INST779": { title: "Readings Seminar; Readings Seminar", type: "elective", credits: 1 },
-  "INST782": { title: "Arrangement, Description, and Access for Archives", type: "elective", credits: 3 },
-  "INST784": { title: "Digital Preservation", type: "elective", credits: 3 },
-  "INST800": { title: "Pre-Candidacy Proseminar", type: "elective", credits: 1 },
-  "INST801": { title: "Theoretical Foundations in Information Studies I", type: "elective", credits: 3 },
-  "INST820": { title: "Literacies for Leadership", type: "elective", credits: 3 },
-  "INST821": { title: "Practice-Based Research", type: "elective", credits: 3 },
-  "INST832": { title: "Information and Human Rights", type: "elective", credits: 3 },
-  "LBSC602": { title: "Serving Information Needs", type: "elective", credits: 3 },
-  "LBSC631": { title: "Achieving Organizational Excellence", type: "elective", credits: 3 },
-  "LBSC644": { title: "Collection Development", type: "elective", credits: 3 },
-  "LBSC645": { title: "Literature and Materials for Children", type: "elective", credits: 3 },
-  "LBSC671": { title: "The Lifecycle of Information", type: "elective", credits: 3 },
-  "LBSC702": { title: "User Instruction", type: "elective", credits: 3 },
-  "LBSC707": { title: "Field Study in Information Service", type: "elective", credits: 3 },
-  "LBSC708Y": { title: "Special Topics in LIS: Community Archives", type: "elective", credits: 3 },
-  "LBSC723": { title: "Advocacy and Support for Information Services", type: "elective", credits: 3 },
-  "LBSC724": { title: "Public Library Seminar", type: "elective", credits: 3 },
-  "LBSC731": { title: "Special Collections", type: "elective", credits: 3 },
-  "LBSC742": { title: "Collaborative Instructional Design and Evaluation", type: "elective", credits: 3 },
-  "LBSC749": { title: "Internship in School Libraries", type: "elective", credits: 3 },
-  "LBSC751": { title: "Research and Teaching Fellowship II", type: "elective", credits: 1 },
-  "LBSC770": { title: "Metadata and Tools for Information Professionals", type: "elective", credits: 3 },
-  "INFM600": { title: "Information Management Ecosystems", type: "MIM Core", credits: 3 },
-  "INFM612": { title: "Management of Information Projects, Programs, and Services", type: "MIM Core", credits: 3 },
-  "INFM737": { title: "Information Management Capstone Experience", type: "Capstone", credits: 3 },
+// FIX (Data Integrity #1): type overrides for the ~21 courses that are NOT
+// plain electives (core/track/capstone/thesis requirements). Every other
+// course id in COURSE_CATALOG defaults to "elective" below.
+const COURSE_TYPE_OVERRIDES = {
+  INFM600: "MIM Core",
+  INFM612: "MIM Core",
+  INFM737: "Capstone",
+  INST624: "MIM Core",
+  INST627: "DSDA Track",
+  INST630: "HCIM Core",
+  INST631: "HCIM Core",
+  INST662: "CSRM Track",
+  INST663: "CSRM Track",
+  INST664: "DSDA Track",
+  INST710: "HCIM Core",
+  INST711: "HCIM Core",
+  INST726: "CSRM Track",
+  INST737: "DSDA Track",
+  INST754: "DSDA Track",
+  INST756: "CSRM Track",
+  INST762: "DSDA Track",
+  INST767: "DSDA Track",
+  INST771: "CSRM Track",
+  INST774: "CSRM Track",
+  INST799: "HCIM Thesis",
 };
+const CORE_CATALOG_LOOKUP = Object.fromEntries(
+  COURSE_CATALOG.map(c => [c.id, {
+    title: c.title,
+    credits: c.credits,
+    type: COURSE_TYPE_OVERRIDES[c.id] ?? "elective",
+  }])
+);
 const DOMAINS = ["Library, Archives & Culture", "Data, AI & Technology", "HCI, Design & Games", "Policy, Ethics & Society", "Research & Capstone", "Custom / Other"];
 const DOMAIN_META = {
   "Library, Archives & Culture": { Icon: Archive, color: "#B45309", bg: "#FFFBEB", border: "#FDE68A" },
@@ -696,6 +649,34 @@ const INITIAL_BLUEPRINTS = {
   }]
 };
 
+// FIX (Data Integrity #1, runtime validation): dev-mode sanity check that every
+// course id referenced by INITIAL_BLUEPRINTS actually exists in COURSE_CATALOG.
+// This app ships with no build step, so there's no NODE_ENV in the browser —
+// __DEV__ is a simple manual flag; flip to false before a production deploy if
+// you want to silence this console check entirely.
+const __DEV__ = true;
+if (__DEV__) {
+  try {
+    const catalogIds = new Set(COURSE_CATALOG.map(c => c.id));
+    const missing = new Set();
+    Object.values(INITIAL_BLUEPRINTS).forEach(terms => {
+      (terms || []).forEach(term => {
+        (term.slots || []).forEach(slot => {
+          if (slot && slot.id && !catalogIds.has(slot.id)) missing.add(slot.id);
+        });
+      });
+    });
+    if (missing.size > 0) {
+      console.error(
+        "[UMD Grad Plan Builder] INITIAL_BLUEPRINTS references course id(s) missing from COURSE_CATALOG:",
+        Array.from(missing)
+      );
+    }
+  } catch (e) {
+    console.error("[UMD Grad Plan Builder] Blueprint validation check failed to run:", e);
+  }
+}
+
 // NEW: Program-aware total credit requirements. MIM = 36, HCIM = 30.
 const PROGRAM_TOTAL_CREDITS = {
   MIM: 36,
@@ -997,17 +978,148 @@ function CategoryBadge({
 
 // ─── Main App Component ───────────────────────────────────────────────────────
 
+// FIX (Key/Identity Safety #2): every place in this file that needs a
+// composite "term + slot" identifier (for React keys, drag/drop tracking,
+// deletedCoreSlots/userElectives dictionary keys, hover state, etc.) MUST go
+// through this single helper. It uses "::" as the delimiter instead of "_"
+// because course codes and term/slot ids never contain "::", whereas a plain
+// "_" join can't reliably be split back apart and risks accidental key
+// collisions if an id ever contains an underscore.
+function makeSlotKey(termId, slotIdOrIdx) {
+  return `${termId}::${slotIdOrIdx}`;
+}
 
 const makeIntersessionTerm = (id, label, semester) => ({
   id,
   label,
   semester,
   slots: [
-    { idx: 0, type: "elective", slot: `${id}_e1`, term: "Both" },
-    { idx: 1, type: "elective", slot: `${id}_e2`, term: "Both" },
-    { idx: 2, type: "elective", slot: `${id}_e3`, term: "Both" },
+    { idx: 0, type: "elective", slot: makeSlotKey(id, "e1"), term: "Both" },
+    { idx: 1, type: "elective", slot: makeSlotKey(id, "e2"), term: "Both" },
+    { idx: 2, type: "elective", slot: makeSlotKey(id, "e3"), term: "Both" },
   ],
 });
+
+// FIX (Code Quality #5): term-rebalancing logic extracted from the inline
+// `terms` useMemo into named, pure functions with clear inputs/outputs, so
+// each rule can be read and (in principle) unit-tested independently of the
+// React component. None of these functions read component state directly —
+// everything they need is passed in as an argument.
+
+// Applies alum-waiver / user-deletion substitutions to a raw blueprint's
+// terms, turning a waived or deleted core slot into an open elective slot
+// tagged with an explanatory altText. Returns a new array of terms; does not
+// mutate its inputs.
+function applyWaiversAndDeletions(blueprint, { program, thesisTrack, isAlum, deletedCoreSlots, targetWaiverIds }) {
+  return blueprint.map(t => {
+    const updatedSlots = t.slots.map(rawSlot => {
+      // HCIM thesis track swaps the two capstone slots for INST799 (Master's
+      // Thesis Research) — INST775→INST799 in Fall 2 and INST776→INST799 in
+      // Spring 2. Both remain required fixed cores.
+      let s = rawSlot;
+      if (program === "HCIM" && thesisTrack && (s.id === "INST775" || s.id === "INST776")) {
+        s = { ...s, id: "INST799" };
+      }
+      const uniqueKey = makeSlotKey(t.id, s.id || s.idx);
+
+      const isWaivedByAlum = isAlum && s.id && targetWaiverIds.includes(s.id);
+      const isUserDeleted = deletedCoreSlots[uniqueKey];
+      if (isWaivedByAlum || isUserDeleted) {
+        return {
+          ...s,
+          id: undefined,
+          type: "elective",
+          slot: uniqueKey,
+          altText: isWaivedByAlum ? `Waiver Active (${s.id})` : `Replaced Core (${s.id})`,
+        };
+      }
+      return s;
+    });
+    return { ...t, slots: updatedSlots };
+  });
+}
+
+// HCIM term flexibility (Year 1): relocates movable cores (INST630, INST710,
+// INST711) between Fall 1 and Spring 1 per movedCourses, and rebalances
+// elective slots so each term always carries SLOTS_PER_TERM (3) slots total.
+// The two term-1 elective slots use STABLE keys (t1_e1, t1_e2) so a selected
+// elective is preserved even as it shifts between Fall 1 and Spring 1.
+// Mutates the f1/s1 term objects found in `builtTerms` in place (matching the
+// prior behavior) and also returns them for convenience.
+function rebalanceHcimYear1Terms(builtTerms, movedCourses) {
+  const f1 = builtTerms.find(t => t.id === "f1");
+  const s1 = builtTerms.find(t => t.id === "s1");
+  if (!f1 || !s1) return { f1, s1 };
+
+  const SLOTS_PER_TERM = 3;
+  const T1_ELECTIVE_KEYS = ["t1_e1", "t1_e2"];
+
+  // Collect every core slot (movable + fixed) from both terms and route each
+  // to its effective term. Non-core (elective) slots are dropped here; they
+  // are re-created below with stable keys.
+  const fallCores = [];
+  const springCores = [];
+  [...f1.slots, ...s1.slots].forEach(s => {
+    if (s.type === "elective") return;
+    const effTerm = s.movable ? s.id && movedCourses[s.id] || s.term : s.term;
+    if (effTerm === "Fall") fallCores.push({ ...s, term: "Fall" });
+    else springCores.push({ ...s, term: "Spring" });
+  });
+
+  // Fill remaining capacity in each term with open elective slots, drawn from
+  // the shared stable-key pool (Fall 1 takes priority for keys so a selected
+  // elective stays put when a core is moved into Spring 1).
+  const fallElectiveCount = Math.max(0, SLOTS_PER_TERM - fallCores.length);
+  const springElectiveCount = Math.max(0, SLOTS_PER_TERM - springCores.length);
+  const makeElective = (key, term) => ({ idx: key, type: "elective", slot: key, term });
+  const fallElectives = T1_ELECTIVE_KEYS.slice(0, fallElectiveCount).map(k => makeElective(k, "Fall"));
+  const springElectives = T1_ELECTIVE_KEYS.slice(fallElectiveCount, fallElectiveCount + springElectiveCount).map(k => makeElective(k, "Spring"));
+
+  // Cores render first within each term, then any open elective slots.
+  f1.slots = [...fallCores, ...fallElectives];
+  s1.slots = [...springCores, ...springElectives];
+  return { f1, s1 };
+}
+
+// HCIM Year-2 elective flexibility: the two Fall 2 elective slots (f2_e1,
+// f2_e2) may each be shifted independently to Spring 2 (and back) via
+// movedElectiveSlots. The fixed capstone/thesis cores (INST775/776 or
+// INST799) stay put. Because elective slots carry a STABLE slot key, a
+// selected course travels with its slot when relocated. Within each term,
+// fixed cores render first, then electives. Mutates the f2/s2 term objects
+// found in `builtTerms` in place (matching the prior behavior) and also
+// returns them for convenience.
+function rebalanceHcimYear2Electives(builtTerms, movedElectiveSlots) {
+  const f2 = builtTerms.find(t => t.id === "f2");
+  const s2 = builtTerms.find(t => t.id === "s2");
+  if (!f2 || !s2) return { f2, s2 };
+
+  const f2Fixed = [];
+  const f2Electives = [];
+  const s2Fixed = [];
+  const s2Electives = [];
+
+  // Gather every Year-2 slot and route each elective to its effective term;
+  // fixed cores remain in their original term.
+  [...f2.slots, ...s2.slots].forEach(s => {
+    if (s.type === "elective") {
+      const key = s.slot || s.idx;
+      const effTerm = movedElectiveSlots[key] || "Fall";
+      // Mark the slot movable and tag its current term so the UI can render a
+      // move button and the correct destination label.
+      const moved = { ...s, movable: true, term: effTerm };
+      if (effTerm === "Spring") s2Electives.push(moved);
+      else f2Electives.push(moved);
+    } else if (s.term === "Spring") {
+      s2Fixed.push(s);
+    } else {
+      f2Fixed.push(s);
+    }
+  });
+  f2.slots = [...f2Fixed, ...f2Electives];
+  s2.slots = [...s2Fixed, ...s2Electives];
+  return { f2, s2 };
+}
 function App() {
   const [isSelfServiceMode, setIsSelfServiceMode] = useState(false);
   // PAGE NAVIGATION: "planner" | "dates"
@@ -1027,6 +1139,9 @@ function App() {
 
   const [dragSource, setDragSource] = useState(null);
   const [dragOverTarget, setDragOverTarget] = useState(null);
+  // FIX (Error Handling #3): visible, dismissible banner shown when Excel
+  // export throws instead of failing silently.
+  const [exportError, setExportError] = useState(null);
 
   const handleDragStart = (e, termId, slotKey, course) => {
     setDragSource({ termId, slotKey, course });
@@ -1113,129 +1228,22 @@ function App() {
     const blueprint = INITIAL_BLUEPRINTS[blueprintId];
     // NEW: Alum core waivers only apply to MIM. HCIM has no waiver pathway.
     const targetWaiverIds = program === "MIM" ? ["INST624", "INST627", "INFM612"] : [];
-    const built = blueprint.map(t => {
-      const updatedSlots = t.slots.map(rawSlot => {
-        // NEW: HCIM thesis track swaps the two capstone slots for INST799
-        // (Master's Thesis Research) — INST775→INST799 in Fall 2 and
-        // INST776→INST799 in Spring 2. Both remain required fixed cores.
-        let s = rawSlot;
-        if (program === "HCIM" && thesisTrack && (s.id === "INST775" || s.id === "INST776")) {
-          s = {
-            ...s,
-            id: "INST799"
-          };
-        }
-        const uniqueKey = `${t.id}_${s.id || s.idx}`;
-
-        // 1. Check if user explicitly deleted this core course or it was automatically waived by alum status
-        const isWaivedByAlum = isAlum && s.id && targetWaiverIds.includes(s.id);
-        const isUserDeleted = deletedCoreSlots[uniqueKey];
-        if (isWaivedByAlum || isUserDeleted) {
-          return {
-            ...s,
-            id: undefined,
-            type: "elective",
-            slot: uniqueKey,
-            altText: isWaivedByAlum ? `Waiver Active (${s.id})` : `Replaced Core (${s.id})`
-          };
-        }
-        return s;
-      });
-      return {
-        ...t,
-        slots: updatedSlots
-      };
+    const built = applyWaiversAndDeletions(blueprint, {
+      program,
+      thesisTrack,
+      isAlum,
+      deletedCoreSlots,
+      targetWaiverIds
     });
 
     // NEW: HCIM term flexibility — relocate movable cores (INST630, INST710,
     // INST711) between Fall 1 and Spring 1 per the advisor's choices, and
-    // rebalance elective slots so each of Fall 1 / Spring 1 always carries the
-    // same number of slots (3). When a core leaves a term, an open elective
-    // slot is created there to backfill; when a core arrives in a term that
-    // had electives, one elective slot is removed. The two term-1 elective
-    // slots use STABLE keys (t1_e1, t1_e2) so a selected elective is preserved
-    // even as it shifts between Fall 1 and Spring 1.
+    // rebalance Year-2 elective slots between Fall 2 and Spring 2. See
+    // rebalanceHcimYear1Terms / rebalanceHcimYear2Electives above (Code
+    // Quality #5 extraction) for the full rules and stable-key rationale.
     if (program === "HCIM") {
-      const f1 = built.find(t => t.id === "f1");
-      const s1 = built.find(t => t.id === "s1");
-      if (f1 && s1) {
-        const SLOTS_PER_TERM = 3;
-        // Stable keys for the two shared term-1 elective slots.
-        const T1_ELECTIVE_KEYS = ["t1_e1", "t1_e2"];
-
-        // Collect every core slot (movable + fixed) from both terms and route
-        // each to its effective term. Non-core (elective) slots are dropped
-        // here; they are re-created below with stable keys.
-        const fallCores = [];
-        const springCores = [];
-        [...f1.slots, ...s1.slots].forEach(s => {
-          if (s.type === "elective") return;
-          const effTerm = s.movable ? s.id && movedCourses[s.id] || s.term : s.term;
-          if (effTerm === "Fall") fallCores.push({
-            ...s,
-            term: "Fall"
-          });else springCores.push({
-            ...s,
-            term: "Spring"
-          });
-        });
-
-        // Fill remaining capacity in each term with open elective slots, drawn
-        // from the shared stable-key pool (Fall 1 takes priority for keys so a
-        // selected elective stays put when a core is moved into Spring 1).
-        const fallElectiveCount = Math.max(0, SLOTS_PER_TERM - fallCores.length);
-        const springElectiveCount = Math.max(0, SLOTS_PER_TERM - springCores.length);
-        const makeElective = (key, term) => ({
-          idx: key,
-          type: "elective",
-          slot: key,
-          term
-        });
-        const fallElectives = T1_ELECTIVE_KEYS.slice(0, fallElectiveCount).map(k => makeElective(k, "Fall"));
-        const springElectives = T1_ELECTIVE_KEYS.slice(fallElectiveCount, fallElectiveCount + springElectiveCount).map(k => makeElective(k, "Spring"));
-
-        // Cores render first within each term, then any open elective slots.
-        f1.slots = [...fallCores, ...fallElectives];
-        s1.slots = [...springCores, ...springElectives];
-      }
-
-      // NEW: HCIM Year-2 elective flexibility — the two Fall 2 elective slots
-      // (f2_e1, f2_e2) may each be shifted independently to Spring 2 (and back)
-      // via movedElectiveSlots. The fixed capstone/thesis cores (INST775/776 or
-      // INST799) stay put. Because elective slots carry a STABLE slot key, a
-      // selected course travels with its slot when relocated. Within each term
-      // we render fixed cores first, then electives.
-      const f2 = built.find(t => t.id === "f2");
-      const s2 = built.find(t => t.id === "s2");
-      if (f2 && s2) {
-        const f2Fixed = [];
-        const f2Electives = [];
-        const s2Fixed = [];
-        const s2Electives = [];
-
-        // Gather every Year-2 slot and route each elective to its effective
-        // term; fixed cores remain in their original term.
-        [...f2.slots, ...s2.slots].forEach(s => {
-          if (s.type === "elective") {
-            const key = s.slot || s.idx;
-            const effTerm = movedElectiveSlots[key] || "Fall";
-            // Mark the slot movable and tag its current term so the UI can
-            // render a move button and the correct destination label.
-            const moved = {
-              ...s,
-              movable: true,
-              term: effTerm
-            };
-            if (effTerm === "Spring") s2Electives.push(moved);else f2Electives.push(moved);
-          } else if (s.term === "Spring") {
-            s2Fixed.push(s);
-          } else {
-            f2Fixed.push(s);
-          }
-        });
-        f2.slots = [...f2Fixed, ...f2Electives];
-        s2.slots = [...s2Fixed, ...s2Electives];
-      }
+      rebalanceHcimYear1Terms(built, movedCourses);
+      rebalanceHcimYear2Electives(built, movedElectiveSlots);
     }
     return built;
   }, [blueprintId, program, isAlum, deletedCoreSlots, movedCourses, thesisTrack, movedElectiveSlots]);
@@ -1298,7 +1306,7 @@ function App() {
     // exclude the course currently occupying the slot being edited so it isn't
     // offered against itself.
     const editingCourseId = target ? userElectives[target.slotKey]?.id : undefined;
-    let list = ELECTIVES.filter(e => {
+    let list = COURSE_CATALOG.filter(e => {
       const cap = e.maxRepeats ?? 1;
       const timesPlaced = placedElectiveCounts[e.id] || 0;
       // Hide fixed cores of the same id (tracked in placedIds but not an
@@ -1339,6 +1347,10 @@ function App() {
   // change to the visible grid or formula is a versioned change gated behind
   // EXPORT_TEMPLATE_VERSION (see buildPlanWorkbook above the component).
   const handleExportToExcel = () => {
+   // FIX (Error Handling #3): wrap the whole export flow so a failure (e.g.
+   // malformed workbook data, XLSX.utils missing, browser download blocked)
+   // surfaces as a visible, dismissible banner instead of failing silently.
+   try {
     // Program name drives the merged title cell (A1).
     const programMeta = PROGRAMS.find(p => p.id === program);
     // PATCH 10: prepend any provided session metadata (student / advisor /
@@ -1353,7 +1365,7 @@ function App() {
     // Resolve a planner slot to a (title, credits) pair, or null when the slot
     // is empty (which must render as blank cells per the export spec).
     const resolveSlot = (term, slot) => {
-      const slotKey = slot.type === "elective" ? slot.slot || "" : `${term.id}_${slot.id}`;
+      const slotKey = slot.type === "elective" ? slot.slot || "" : makeSlotKey(term.id, slot.id);
       const activeElectiveObj = slot.type === "elective" ? userElectives[slotKey] : undefined;
       const courseMeta = slot.id ? CORE_CATALOG_LOOKUP[slot.id] : activeElectiveObj;
       if (slot.type === "elective" && !activeElectiveObj) return null;
@@ -1393,6 +1405,11 @@ function App() {
     });
     const filename = program === "MIM" ? `MIM_Academic_Plan_${track}.xlsx` : `HCIM_Academic_Plan.xlsx`;
     XLSX.writeFile(wb, filename);
+    setExportError(null);
+   } catch (err) {
+    console.error("[UMD Grad Plan Builder] Excel export failed:", err);
+    setExportError("Export failed \u2014 please try again or contact support");
+   }
   };
   function openDrawer(termId, slotKey) {
     setTarget({
@@ -1458,7 +1475,7 @@ function App() {
     });
   }
   function deleteCoreCourseSlot(termId, slotId, slotIdxStr) {
-    const uniqueKey = `${termId}_${slotId || slotIdxStr}`;
+    const uniqueKey = makeSlotKey(termId, slotId || slotIdxStr);
     setDeletedCoreSlots(prev => ({
       ...prev,
       [uniqueKey]: true
@@ -1505,7 +1522,13 @@ function App() {
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
   }, [drawerOpen]);
-  return <div className="min-h-screen font-sans flex flex-col antialiased select-none" style={{
+  // FIX (Accessibility & UI Polish #4): select-none used to be applied to the
+  // ENTIRE app root, which silently made all readable text (course titles,
+  // descriptions, notes, etc.) non-selectable for every user. It's now scoped
+  // only to the draggable course-slot elements below, where it's needed to
+  // avoid the browser's native text-selection drag interfering with our
+  // custom drag-and-drop.
+  return <div className="min-h-screen font-sans flex flex-col antialiased" style={{
     background: "#F9FAFB"
   }}>
       {/* HEADER BANNER */}
@@ -1588,6 +1611,22 @@ function App() {
           </button>
         </div>
       </header>
+
+      {/* FIX (Error Handling #3): visible, dismissible banner shown when Excel
+          export throws instead of failing silently. */}
+      {exportError && <div role="alert" className="flex items-center justify-between gap-3 px-6 py-3 mx-6 mt-4 rounded-lg border text-[13px] font-medium" style={{
+        background: "#FEF2F2",
+        borderColor: "#FCA5A5",
+        color: "#B91C1C"
+      }}>
+        <div className="flex items-center gap-2">
+          <AlertCircle size={15} />
+          <span>{exportError}</span>
+        </div>
+        <button onClick={() => setExportError(null)} aria-label="Dismiss export error" className="px-2 py-1 rounded-md hover:bg-red-100 focus-visible:ring-2 focus-visible:ring-red-400">
+          <X size={14} />
+        </button>
+      </div>}
 
 
       {/* MAIN CONTAINER */}
@@ -1686,6 +1725,12 @@ function App() {
                   </p>
                 </div>
                 <ToggleSwitch checked={isAlum} onChange={() => {
+                // FIX (Accessibility & UI Polish #4): confirm before enabling
+                // alum status, since it silently waives multiple required
+                // core courses and clears any custom elective placements.
+                if (!isAlum && !window.confirm("Enabling alum status will waive the required core milestone courses and clear any electives you've already placed. Continue?")) {
+                  return;
+                }
                 setIsAlum(v => !v);
                 setDeletedCoreSlots({});
                 setUserElectives({});
@@ -1945,17 +1990,17 @@ function App() {
 
                 <div className="p-4 flex flex-col gap-3 flex-1 justify-start">
                   {term.slots.map((slot, si) => {
-                const slotKey = slot.type === "elective" ? slot.slot || "" : `${term.id}_${slot.id}`;
+                const slotKey = slot.type === "elective" ? slot.slot || "" : makeSlotKey(term.id, slot.id);
                 const activeElectiveObj = slot.type === "elective" ? userElectives[slotKey] : undefined;
                 const courseMeta = slot.id ? CORE_CATALOG_LOOKUP[slot.id] : activeElectiveObj;
                 if (slot.type === "elective" && !activeElectiveObj) {
-                  const keyStr = `${term.id}_${si}`;
+                  const keyStr = makeSlotKey(term.id, si);
                   const isHovered = hoveredSlot === keyStr;
                   // NEW: Year-2 elective slots can be shifted between
                   // Fall 2 and Spring 2 even while empty.
                   const isMovableElective = slot.movable === true;
                   return <div key={si} className="relative group w-full">
-                          <button onMouseEnter={() => setHoveredSlot(keyStr)} onMouseLeave={() => setHoveredSlot(null)} onClick={() => openDrawer(term.id, slotKey)} className={`w-full h-16 rounded-lg border-2 border-dashed flex items-center justify-center gap-2 transition-all duration-150 ${dragOverTarget?.termId === term.id && dragOverTarget?.slotKey === slotKey ? "ring-2 ring-blue-400 bg-blue-50 border-blue-400" : ""}`}
+                          <button onMouseEnter={() => setHoveredSlot(keyStr)} onMouseLeave={() => setHoveredSlot(null)} onClick={() => openDrawer(term.id, slotKey)} className={`w-full h-16 rounded-lg border-2 border-dashed flex items-center justify-center gap-2 transition-all duration-150 ${slot.type === "elective" && !!activeElectiveObj ? "select-none" : ""} ${dragOverTarget?.termId === term.id && dragOverTarget?.slotKey === slotKey ? "ring-2 ring-blue-400 bg-blue-50 border-blue-400" : ""}`}
                     draggable={slot.type === "elective" && !!activeElectiveObj}
                     onDragStart={slot.type === "elective" && activeElectiveObj ? (e) => handleDragStart(e, term.id, slotKey, activeElectiveObj) : undefined}
                     onDragOver={slot.type === "elective" ? (e) => handleDragOver(e, term.id, slotKey) : undefined}
@@ -1975,14 +2020,14 @@ function App() {
                           {isMovableElective && <button onClick={e => {
                       e.stopPropagation();
                       moveElectiveTerm(slotKey);
-                    }} className="absolute top-1 right-1 w-6 h-6 rounded flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all bg-white/80 border border-slate-200 text-slate-400 hover:bg-blue-50 hover:text-blue-600" title={`Move this elective slot to ${slot.term === "Fall" ? "Spring 2" : "Fall 2"}`}>
+                    }} className="absolute top-1 right-1 w-6 h-6 rounded flex items-center justify-center opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 focus-visible:opacity-100 [@media(pointer:coarse)]:opacity-100 transition-all bg-white/80 border border-slate-200 text-slate-400 hover:bg-blue-50 hover:text-blue-600" title={`Move this elective slot to ${slot.term === "Fall" ? "Spring 2" : "Fall 2"}`}>
                               <ArrowLeftRight size={11} />
                             </button>}
                         </div>;
                 }
                 const badgeCategory = slot.type === "elective" ? (activeElectiveObj?.domains && activeElectiveObj.domains.includes("Custom / Other")) ? "Custom Course" : "Elective" : courseMeta ? courseMeta.type : "Required Core";
                 const domainMeta = slot.type === "elective" && courseMeta && courseMeta.domains && courseMeta.domains.length > 0 ? (DOMAIN_META[courseMeta.domains[0]] || DOMAIN_META["Custom / Other"]) : null;
-                return <div key={si} className={`rounded-lg flex items-center gap-3 px-3 border border-slate-200 transition-all duration-150 group ${dragOverTarget?.termId === term.id && dragOverTarget?.slotKey === slotKey ? "ring-2 ring-blue-400 bg-blue-50" : ""} ${dragSource?.slotKey === slotKey && dragSource?.termId === term.id ? "opacity-50" : ""}`}
+                return <div key={si} className={`rounded-lg flex items-center gap-3 px-3 border border-slate-200 transition-all duration-150 group ${slot.type === "elective" && !!activeElectiveObj ? "select-none" : ""} ${dragOverTarget?.termId === term.id && dragOverTarget?.slotKey === slotKey ? "ring-2 ring-blue-400 bg-blue-50" : ""} ${dragSource?.slotKey === slotKey && dragSource?.termId === term.id ? "opacity-50" : ""}`}
                     draggable={slot.type === "elective" && !!activeElectiveObj}
                     onDragStart={slot.type === "elective" && activeElectiveObj ? (e) => handleDragStart(e, term.id, slotKey, activeElectiveObj) : undefined}
                     onDragOver={slot.type === "elective" ? (e) => handleDragOver(e, term.id, slotKey) : undefined}
@@ -2018,19 +2063,19 @@ function App() {
                               {/* NEW: Year-2 elective slots can be shifted
                                   between Fall 2 and Spring 2, carrying their
                                   selected course with them. */}
-                              {slot.movable && <button onClick={() => moveElectiveTerm(slotKey)} className="w-6 h-6 rounded flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all text-slate-400 hover:bg-blue-50 hover:text-blue-600" title={`Move this elective to ${slot.term === "Fall" ? "Spring 2" : "Fall 2"}`}>
+                              {slot.movable && <button onClick={() => moveElectiveTerm(slotKey)} className="w-6 h-6 rounded flex items-center justify-center opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 focus-visible:opacity-100 [@media(pointer:coarse)]:opacity-100 transition-all text-slate-400 hover:bg-blue-50 hover:text-blue-600" title={`Move this elective to ${slot.term === "Fall" ? "Spring 2" : "Fall 2"}`}>
                                   <ArrowLeftRight size={11} />
                                 </button>}
-                              <button onClick={() => removeElective(slotKey)} className="w-6 h-6 rounded flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all text-slate-300 hover:bg-blue-50 hover:text-blue-600" title="Remove selected elective">
+                              <button onClick={() => { if (window.confirm("Remove this elective from the plan?")) removeElective(slotKey); }} className="w-6 h-6 rounded flex items-center justify-center opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 focus-visible:opacity-100 [@media(pointer:coarse)]:opacity-100 transition-all text-slate-300 hover:bg-blue-50 hover:text-blue-600" title="Remove selected elective">
                                 <Trash2 size={11} />
                               </button>
                             </> : <>
                               {/* NEW: HCIM movable cores can swap between
                                   Fall 1 and Spring 1. */}
-                              {slot.movable && slot.id && <button onClick={() => moveCourseTerm(slot.id)} className="w-6 h-6 rounded flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all text-slate-400 hover:bg-blue-50 hover:text-blue-600" title={`Move to ${slot.term === "Fall" ? "Spring 1" : "Fall 1"} (offered both terms)`}>
+                              {slot.movable && slot.id && <button onClick={() => moveCourseTerm(slot.id)} className="w-6 h-6 rounded flex items-center justify-center opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 focus-visible:opacity-100 [@media(pointer:coarse)]:opacity-100 transition-all text-slate-400 hover:bg-blue-50 hover:text-blue-600" title={`Move to ${slot.term === "Fall" ? "Spring 1" : "Fall 1"} (offered both terms)`}>
                                   <ArrowLeftRight size={11} />
                                 </button>}
-                              <button onClick={() => !isSelfServiceMode && deleteCoreCourseSlot(term.id, slot.id || "", slot.idx)} className={`w-6 h-6 rounded flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all text-slate-300 ${isSelfServiceMode ? "hidden" : "hover:bg-blue-50 hover:text-blue-600"}`} title="Substitute requirement with elective" className="w-6 h-6 rounded flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all text-slate-300 hover:bg-blue-50 hover:text-blue-600" title="Substitute requirement with elective">
+                              <button onClick={() => { if (!isSelfServiceMode && window.confirm("Delete this required core course? You'll need to substitute an elective in its place.")) deleteCoreCourseSlot(term.id, slot.id || "", slot.idx); }} className={`w-6 h-6 rounded flex items-center justify-center opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 focus-visible:opacity-100 [@media(pointer:coarse)]:opacity-100 transition-all text-slate-300 ${isSelfServiceMode ? "hidden" : "hover:bg-blue-50 hover:text-blue-600"}`} title="Substitute requirement with elective">
                                 <Trash2 size={11} />
                               </button>
                             </>}
@@ -2084,7 +2129,7 @@ function App() {
                 <h3 className="text-[15px] font-bold text-slate-900 leading-none">
                   Course Selection Panel
                 </h3>
-                {targetOriginalTerm && target && <p className="text-[11px] text-slate-400 flex items-center gap-1 mt-1">
+                {targetOriginalTerm && target && <p className="text-[12px] text-slate-400 flex items-center gap-1 mt-1">
                     <ChevronRight size={9} strokeWidth={3} />
                     Configuring slot allocation for{" "}
                     <strong className="text-slate-600 font-semibold">
@@ -2146,7 +2191,7 @@ function App() {
                       <p className="text-[12px] font-semibold">
                         No matching seasonal courses found
                       </p>
-                      <p className="text-[11px] text-center opacity-70">
+                      <p className="text-[12px] text-center opacity-70">
                         Adjust filtering domains or check the
                         custom entry tab.
                       </p>
@@ -2186,14 +2231,14 @@ function App() {
                               <h4 className="text-[12px] font-bold text-slate-800 leading-tight mb-1">
                                 {course.title}
                               </h4>
-                              <p className="text-[11px] text-slate-400 leading-normal mb-2.5">
+                              <p className="text-[12px] text-slate-400 leading-normal mb-2.5">
                                 {course.desc}
                               </p>
                               <div className="flex items-center justify-between">
                                 <span className="font-mono text-[10px] font-bold text-slate-500">
                                   {course.credits} Credits
                                 </span>
-                                <button onClick={() => selectCourse(course)} className="flex items-center gap-1 px-2.5 py-1 text-[11px] text-white font-bold rounded transition-all shrink-0" style={{
+                                <button onClick={() => selectCourse(course)} className="flex items-center gap-1 px-2.5 py-1 text-[12px] text-white font-bold rounded transition-all shrink-0" style={{
                         background: "#E51C24"
                       }}>
                                   <Plus size={10} strokeWidth={3} />{" "}
@@ -2208,7 +2253,7 @@ function App() {
               </> : <form onSubmit={handleCustomCourseSubmit} className="flex-1 p-6 flex flex-col gap-4 overflow-y-auto bg-white">
                 <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg flex items-start gap-2.5">
                   <AlertCircle size={14} className="text-amber-600 shrink-0 mt-0.5" />
-                  <p className="text-[11px] text-amber-800 leading-relaxed">
+                  <p className="text-[12px] text-amber-800 leading-relaxed">
                     Enter any external UMD department course
                     number or standalone study milestone here to
                     populate this elective placeholder cell
@@ -2257,7 +2302,7 @@ function App() {
             <div className="shrink-0 flex items-center justify-between px-5 py-3 border-t border-slate-100 bg-slate-50">
               <div className="flex items-center gap-1.5 text-slate-400">
                 <Info size={10} />
-                <span className="text-[10px]">
+                <span className="text-[12px]">
                   {activeTab !== "custom" ? `${filteredElectives.length} catalogs displayed` : "Custom input active"}
                 </span>
               </div>
