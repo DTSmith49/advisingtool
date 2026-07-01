@@ -721,7 +721,7 @@ const PROGRAMS = [{
 //   C13    "Total Credits" (bold)
 //   D13    =SUM(B4:B6,D4:D6,B9:B11,D9:D11)  (formula, never hardcoded)
 
-const EXPORT_TEMPLATE_VERSION = 1;
+const EXPORT_TEMPLATE_VERSION = 2; // v2: added borders, header fill, wrapped titles, wider cols/rows
 const SLOTS_PER_EXPORT_TERM = 3;
 const EXPORT_TOTAL_FORMULA = "SUM(B4:B6,D4:D6,B9:B11,D9:D11)";
 
@@ -769,10 +769,34 @@ function buildPlanWorkbook(plan) {
   const right = {
     horizontal: "right"
   };
+  // Wrapped left-align for course titles so long names wrap to a second
+  // line instead of clipping, and a vertically-centered right-align for
+  // credit numbers so they stay balanced against taller wrapped rows.
+  const titleWrap = {
+    horizontal: "left",
+    vertical: "center",
+    wrapText: true
+  };
+  const creditsCenter = {
+    horizontal: "right",
+    vertical: "center"
+  };
+  // Light header fill, matching the existing Student Resources banner style.
+  const headerFill = {
+    fgColor: { rgb: "F8FAFC" }
+  };
 
   // Helper to set a cell with value/type/style. Numeric credits are stored as
   // numbers (t:"n") so the SUM formula works.
   const ws = {};
+  // Default thin border applied to every populated data cell so the sheet
+  // reads as a clean table instead of loosely-spaced text.
+  const thinBorder = {
+    top: { style: "thin", color: { rgb: "E2E8F0" } },
+    bottom: { style: "thin", color: { rgb: "E2E8F0" } },
+    left: { style: "thin", color: { rgb: "E2E8F0" } },
+    right: { style: "thin", color: { rgb: "E2E8F0" } }
+  };
   const setCell = (addr, value, opts) => {
     if (value === undefined || value === "") return; // leave blank
     const cell = {
@@ -782,6 +806,8 @@ function buildPlanWorkbook(plan) {
     const s = {};
     if (opts?.font) s.font = opts.font;
     if (opts?.align) s.alignment = opts.align;
+    if (opts?.fill) s.fill = opts.fill;
+    if (opts?.border !== false) s.border = thinBorder;
     if (Object.keys(s).length) cell.s = s;
     ws[addr] = cell;
   };
@@ -805,11 +831,13 @@ function buildPlanWorkbook(plan) {
     const b = EXPORT_BLOCKS[label];
     setCell(`${b.titleCol}${b.headerRow}`, label, {
       font: bold,
-      align: left
+      align: left,
+      fill: headerFill
     });
     setCell(`${b.creditsCol}${b.headerRow}`, "Credits", {
       font: bold,
-      align: right
+      align: right,
+      fill: headerFill
     });
     const courses = plan.blocks[label] || [];
     for (let i = 0; i < SLOTS_PER_EXPORT_TERM; i++) {
@@ -817,28 +845,36 @@ function buildPlanWorkbook(plan) {
       const course = courses[i];
       if (course) {
         setCell(`${b.titleCol}${row}`, course.title, {
-          align: left
+          align: titleWrap
         });
         setCell(`${b.creditsCol}${row}`, course.credits, {
-          align: right,
+          align: creditsCenter,
           type: "n"
         });
+      } else {
+        // Empty slot → still draw bordered, blank cells so the grid stays
+        // visually complete instead of leaving a gap in the table. setCell
+        // skips blank values entirely, so these are written directly.
+        ws[`${b.titleCol}${row}`] = { t: "s", v: "", s: { border: thinBorder, alignment: titleWrap } };
+        ws[`${b.creditsCol}${row}`] = { t: "s", v: "", s: { border: thinBorder, alignment: creditsCenter } };
       }
-      // else: empty slot → both cells left blank.
     }
   });
 
   // 5. Total credits row — label (bold) + live SUM formula (never hardcoded).
   setCell("C13", "Total Credits", {
     font: bold,
-    align: left
+    align: left,
+    fill: headerFill
   });
   ws["D13"] = {
     t: "n",
     f: EXPORT_TOTAL_FORMULA,
     s: {
       font: bold,
-      alignment: right
+      alignment: right,
+      fill: headerFill,
+      border: thinBorder
     }
   };
 
@@ -855,22 +891,26 @@ function buildPlanWorkbook(plan) {
       c: 3
     }
   }];
-  // 6. Column widths: A & C wide (titles), B & D narrow (credits).
+  // 6. Column widths: A & C wide (titles), B & D narrow (credits). Widened
+  // from 30→42 so full course titles no longer clip in the default view.
   ws["!cols"] = [{
-    wch: 30
+    wch: 42
   }, {
-    wch: 9
+    wch: 10
   }, {
-    wch: 30
+    wch: 42
   }, {
-    wch: 9
+    wch: 10
   }];
-  // Give row 1 extra height when it carries a wrapped session-metadata line.
-  if (titleHasMeta) {
-    ws["!rows"] = [{
-      hpt: 34
-    }];
-  }
+  // Row heights: give every course-data row (4-6, 9-11) extra height so
+  // wrapped long titles have room to breathe, and give row 1 extra height
+  // when it carries a wrapped session-metadata line.
+  const rows = [];
+  rows[0] = { hpt: titleHasMeta ? 34 : 20 };
+  [4, 5, 6, 9, 10, 11].forEach(r => {
+    rows[r - 1] = { hpt: 28 };
+  });
+  ws["!rows"] = rows;
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, "Plan");
   
@@ -1964,6 +2004,59 @@ function App() {
 
         {/* PLANNER GRID */}
         <main className="flex-1 grid grid-cols-2 gap-5 content-start">
+          {/* PATCH 8+9: SESSION INFO & ADVISING NOTES — moved out of the
+              left sidebar per user request. Positioned full-width, directly
+              under the term-card schedule builder grid above and directly
+              above the Student Resources box below. */}
+          <div className="col-span-2 grid grid-cols-2 gap-5">
+            <div className="bg-white rounded-xl overflow-hidden border border-slate-200 shadow-sm">
+              <div className="flex items-center gap-2 px-4 py-3 border-b border-slate-100">
+                <Info size={13} style={{
+                color: "#E51C24"
+              }} />
+                <h2 className="text-[11px] font-bold uppercase tracking-widest text-slate-500">
+                  Session Info
+                </h2>
+              </div>
+              <div className="p-3 flex flex-col gap-2.5">
+                <div className="flex flex-col gap-1">
+                  <label className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">
+                    Student Name
+                  </label>
+                  <input type="text" value={studentName} onChange={e => setStudentName(e.target.value)} placeholder="e.g., Jane Terrapin" className="px-2.5 py-1.5 rounded-lg border border-slate-200 text-[12px] outline-none focus:border-slate-400" />
+                </div>
+                <div className="flex flex-col gap-1">
+                  <label className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">
+                    Advisor Name
+                  </label>
+                  <input type="text" value={advisorName} onChange={e => setAdvisorName(e.target.value)} placeholder="e.g., Dr. Smith" className="px-2.5 py-1.5 rounded-lg border border-slate-200 text-[12px] outline-none focus:border-slate-400" />
+                </div>
+                <div className="flex flex-col gap-1">
+                  <label className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">
+                    Meeting Date
+                  </label>
+                  <input type="date" value={meetingDate} onChange={e => setMeetingDate(e.target.value)} className="px-2.5 py-1.5 rounded-lg border border-slate-200 text-[12px] outline-none focus:border-slate-400" />
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-white rounded-xl overflow-hidden border border-slate-200 shadow-sm">
+              <div className="flex items-center gap-2 px-4 py-3 border-b border-slate-100">
+                <Edit2 size={13} style={{
+                color: "#E51C24"
+              }} />
+                <h2 className="text-[11px] font-bold uppercase tracking-widest text-slate-500">
+                  Advising Notes
+                </h2>
+              </div>
+              <div className="p-3">
+                <textarea value={advisingNotes} onChange={e => setAdvisingNotes(e.target.value)} placeholder="Notes from this advising session…" rows={4} className="w-full h-full px-2.5 py-2 rounded-lg border border-slate-200 text-[12px] outline-none focus:border-slate-400 resize-y" />
+              </div>
+            </div>
+          </div>
+
+          
+
           {displayTerms.map(term => {
           let termCredits = 0;
           term.slots.forEach(s => {
@@ -2084,57 +2177,6 @@ function App() {
               </div>;
         })}
         
-          {/* PATCH 8+9: SESSION INFO & ADVISING NOTES — moved out of the
-              left sidebar per user request. Positioned full-width, directly
-              under the term-card schedule builder grid above and directly
-              above the Student Resources box below. */}
-          <div className="col-span-2 grid grid-cols-2 gap-5">
-            <div className="bg-white rounded-xl overflow-hidden border border-slate-200 shadow-sm">
-              <div className="flex items-center gap-2 px-4 py-3 border-b border-slate-100">
-                <Info size={13} style={{
-                color: "#E51C24"
-              }} />
-                <h2 className="text-[11px] font-bold uppercase tracking-widest text-slate-500">
-                  Session Info
-                </h2>
-              </div>
-              <div className="p-3 flex flex-col gap-2.5">
-                <div className="flex flex-col gap-1">
-                  <label className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">
-                    Student Name
-                  </label>
-                  <input type="text" value={studentName} onChange={e => setStudentName(e.target.value)} placeholder="e.g., Jane Terrapin" className="px-2.5 py-1.5 rounded-lg border border-slate-200 text-[12px] outline-none focus:border-slate-400" />
-                </div>
-                <div className="flex flex-col gap-1">
-                  <label className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">
-                    Advisor Name
-                  </label>
-                  <input type="text" value={advisorName} onChange={e => setAdvisorName(e.target.value)} placeholder="e.g., Dr. Smith" className="px-2.5 py-1.5 rounded-lg border border-slate-200 text-[12px] outline-none focus:border-slate-400" />
-                </div>
-                <div className="flex flex-col gap-1">
-                  <label className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">
-                    Meeting Date
-                  </label>
-                  <input type="date" value={meetingDate} onChange={e => setMeetingDate(e.target.value)} className="px-2.5 py-1.5 rounded-lg border border-slate-200 text-[12px] outline-none focus:border-slate-400" />
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-white rounded-xl overflow-hidden border border-slate-200 shadow-sm">
-              <div className="flex items-center gap-2 px-4 py-3 border-b border-slate-100">
-                <Edit2 size={13} style={{
-                color: "#E51C24"
-              }} />
-                <h2 className="text-[11px] font-bold uppercase tracking-widest text-slate-500">
-                  Advising Notes
-                </h2>
-              </div>
-              <div className="p-3">
-                <textarea value={advisingNotes} onChange={e => setAdvisingNotes(e.target.value)} placeholder="Notes from this advising session…" rows={4} className="w-full h-full px-2.5 py-2 rounded-lg border border-slate-200 text-[12px] outline-none focus:border-slate-400 resize-y" />
-              </div>
-            </div>
-          </div>
-
           <div className="col-span-2 mt-6 bg-white rounded-xl shadow-sm border border-slate-200 p-6">
             <h2 className="text-[16px] font-bold text-slate-800 mb-4 border-b border-slate-100 pb-3 flex items-center">
               <span className="mr-2">📚</span> Student Resources (Fall 2026)
