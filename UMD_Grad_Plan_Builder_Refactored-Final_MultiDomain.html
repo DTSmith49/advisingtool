@@ -41,7 +41,7 @@ import * as XLSXns from 'xlsx-js-style';
 import { Download, X, Plus, Check, GraduationCap, BarChart3,
          Shield, Layers, Archive, MousePointer2, ChevronRight,
          AlertCircle, Sparkles, BookMarked, Info, Trash2,
-         Edit2, ArrowLeftRight } from 'lucide-react';
+         Edit2, ArrowLeftRight, Calendar } from 'lucide-react';
 
 // esm.sh exposes the SheetJS object as the module's default export; normalize so
 // XLSX.utils / XLSX.writeFile resolve whether the namespace is spread or nested.
@@ -1010,6 +1010,8 @@ const makeIntersessionTerm = (id, label, semester) => ({
 });
 function App() {
   const [isSelfServiceMode, setIsSelfServiceMode] = useState(false);
+  // PAGE NAVIGATION: "planner" | "dates"
+  const [activePage, setActivePage] = useState("planner");
   // NEW: Program is the top-level selection. MIM exposes tracks + alum waivers;
   // HCIM uses its own fixed blueprint.
   const [program, setProgram] = useState("MIM");
@@ -1532,6 +1534,28 @@ function App() {
           </div>
         </div>
 
+        {/* PAGE NAVIGATION TABS */}
+        <div className="flex items-center gap-1 px-2">
+          {[
+            { id: "planner", label: "Plan Builder", Icon: GraduationCap },
+            { id: "dates",   label: "Important Dates", Icon: Calendar },
+          ].map(({ id, label, Icon }) => (
+            <button
+              key={id}
+              onClick={() => setActivePage(id)}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-bold uppercase tracking-widest transition-all duration-150"
+              style={{
+                background: activePage === id ? "#FFFFFF" : "transparent",
+                color: activePage === id ? "#E51C24" : "#94A3B8",
+                border: activePage === id ? "1px solid #E51C24" : "1px solid transparent",
+              }}
+            >
+              <Icon size={11} strokeWidth={2.5} />
+              {label}
+            </button>
+          ))}
+        </div>
+
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-2.5 px-3.5 py-2 rounded-full" style={{
           background: "#252222",
@@ -1565,39 +1589,9 @@ function App() {
         </div>
       </header>
 
-        {!isSelfServiceMode && (
-          <div className="bg-white border-b border-slate-200 px-6 py-4 flex flex-col gap-3 shrink-0 z-20 relative shadow-sm w-full">
-            <h2 className="text-[12px] font-bold uppercase tracking-widest text-slate-500">
-              Academic Advising
-            </h2>
-            <div className="flex gap-6 items-start">
-              <div className="flex flex-col gap-3 w-1/3">
-                <div>
-                  <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1">
-                    Student Name
-                  </label>
-                  <input type="text" value={studentName} onChange={e => setStudentName(e.target.value)} placeholder="e.g., Jane Terrapin" className="w-full px-3 py-2 rounded-lg border border-slate-200 text-sm focus:outline-none focus:border-[#E51C24] bg-slate-50" />
-                </div>
-                <div>
-                  <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1">
-                    Advisor Name
-                  </label>
-                  <input type="text" value={advisorName} onChange={e => setAdvisorName(e.target.value)} placeholder="e.g., Advisor Smith" className="w-full px-3 py-2 rounded-lg border border-slate-200 text-sm focus:outline-none focus:border-[#E51C24] bg-slate-50" />
-                </div>
-              </div>
-              <div className="flex-1 h-full">
-                <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1">
-                  Advising Notes
-                </label>
-                <textarea value={advisingNotes} onChange={e => setAdvisingNotes(e.target.value)} placeholder="Notes from this advising session..." className="w-full h-[104px] px-3 py-2 rounded-lg border border-slate-200 text-sm focus:outline-none focus:border-[#E51C24] bg-slate-50 resize-none"></textarea>
-              </div>
-            </div>
-          </div>
-        )}
-
 
       {/* MAIN CONTAINER */}
-      <div className="flex gap-6 p-6 flex-1 max-w-[1440px] mx-auto w-full">
+      {activePage === "planner" && <div className="flex gap-6 p-6 flex-1 max-w-[1440px] mx-auto w-full">
         {/* PROFILE SIDEBAR */}
         <aside className="shrink-0 flex flex-col gap-4 sticky top-[94px] self-start" style={{
         width: 320
@@ -2075,7 +2069,8 @@ function App() {
             </div>
           </div>
 </main>
-      </div>
+      </div>}
+      {activePage === "dates" && <ImportantDatesPage />}
 
       {/* DRAWER COMPONENT */}
       {drawerOpen && <div className="fixed inset-0 z-50 flex justify-end" style={{
@@ -2274,6 +2269,190 @@ function App() {
         </div>}
     </div>;
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// IMPORTANT DATES PAGE
+// ─────────────────────────────────────────────────────────────────────────────
+
+const FALL_2026_DATES = [
+  {
+    id: "first-day",
+    title: "First Day of Classes",
+    date: "Aug 31, 2026 (Mon)",
+    category: "registration",
+    badgeLabel: "Info",
+    description: "Late registration begins on the first day of classes. All students initiating registration for the semester on or after this date will be assessed a $20 late registration fee.",
+  },
+  {
+    id: "schedule-adj",
+    title: "Schedule Adjustment Period",
+    date: "Aug 31, 2026 (Mon)",
+    endDate: "Sep 14, 2026 (Mon)",
+    category: "registration",
+    badgeLabel: "Info",
+    description: "Students can [add and drop classes](https://registrar.umd.edu/registration/register-classes/add-drop-classes), change credit level, grading method; no appointment required.",
+  },
+  {
+    id: "drop-refund",
+    title: "Last Day to Drop with 100% Refund",
+    date: "Sep 4, 2026 (Fri)",
+    category: "deadline",
+    badgeLabel: "Deadline",
+    description: "Final date to drop individual courses and remain registered with a full tuition refund. Does not apply to students withdrawing from all courses — see separate withdraw deadlines.",
+  },
+  {
+    id: "grad-app",
+    title: "Application for Graduation Deadline",
+    date: "Sep 14, 2026 (Mon)",
+    category: "deadline",
+    badgeLabel: "Deadline",
+    description: "Master's and Doctoral Students: Final date to submit the [Application for Graduation](http://app.testudo.umd.edu/main/graduationApp) in order to graduate this semester/term.",
+  },
+  {
+    id: "thesis-committee",
+    title: "Master's Nomination of Thesis Committee",
+    date: "Oct 1, 2026 (Thu)",
+    category: "thesis",
+    badgeLabel: "Deadline",
+    description: "Master's Thesis Students: Submit the [Nomination of Thesis Committee Form](https://gradschool.umd.edu/sites/default/files/2022-11/umd_nomination_of_thesis_or_dissertation_committee_202205.pdf) to the Office of the Registrar (registrar-graduate@umd.edu). Committee form must be submitted at least 6 weeks before the scheduled defense.",
+  },
+  {
+    id: "fall-break",
+    title: "Fall Break — No Classes",
+    date: "Oct 12, 2026 (Mon)",
+    endDate: "Oct 13, 2026 (Tue)",
+    category: "break",
+    badgeLabel: "Break",
+    description: "University-wide fall break. No classes held.",
+  },
+  {
+    id: "thesis-submission",
+    title: "Master's Thesis Submission Deadline",
+    date: "Dec 2, 2026 (Wed)",
+    category: "thesis",
+    badgeLabel: "Deadline",
+    description: "Master's Thesis Students: Final date to submit thesis via the [ETD System](http://www.etdadmin.com/cgi-bin/school?siteId=76). Thesis directors must also submit the signed Report of Examining Committee form to the Office of the Registrar (registrar-graduate@umd.edu).",
+  },
+];
+
+const DATE_CATEGORY_COLORS = {
+  registration: "#2563EB",
+  deadline:     "#E51C24",
+  thesis:       "#7C3AED",
+  break:        "#059669",
+  info:         "#64748B",
+};
+
+const DATE_BADGE_STYLES = {
+  Deadline: { bg: "#FFF1F2", text: "#9F1239", border: "#FDA4AF" },
+  Info:     { bg: "#F1F5F9", text: "#475569", border: "#CBD5E1" },
+  Break:    { bg: "#ECFDF5", text: "#065F46", border: "#A7F3D0" },
+};
+
+function renderWithLinks(text) {
+  // Parse [label](url) markdown links and email addresses
+  const parts = [];
+  const mdLink = /\[([^\]]+)\]\(([^)]+)\)/g;
+  const emailRe = /([\w.+-]+@[\w-]+\.[a-zA-Z]{2,})/g;
+  let lastIndex = 0;
+
+  // Collect all match positions (markdown links take priority)
+  const matches = [];
+  let m;
+  mdLink.lastIndex = 0;
+  while ((m = mdLink.exec(text)) !== null) {
+    matches.push({ start: m.index, end: m.index + m[0].length, label: m[1], href: m[2], type: "link" });
+  }
+  emailRe.lastIndex = 0;
+  while ((m = emailRe.exec(text)) !== null) {
+    // Skip if inside a markdown link range
+    const inside = matches.some(lm => m.index >= lm.start && m.index < lm.end);
+    if (!inside) {
+      matches.push({ start: m.index, end: m.index + m[0].length, label: m[0], href: "mailto:" + m[0], type: "email" });
+    }
+  }
+  matches.sort((a, b) => a.start - b.start);
+
+  matches.forEach((match, i) => {
+    if (match.start > lastIndex) {
+      parts.push(<span key={"t" + i}>{text.slice(lastIndex, match.start)}</span>);
+    }
+    parts.push(
+      <a key={"a" + i} href={match.href} target="_blank" rel="noopener noreferrer"
+         className="text-red-600 underline hover:text-red-800 transition-colors">
+        {match.label}
+      </a>
+    );
+    lastIndex = match.end;
+  });
+  if (lastIndex < text.length) {
+    parts.push(<span key="tail">{text.slice(lastIndex)}</span>);
+  }
+  return parts;
+}
+
+function ImportantDatesPage() {
+  return (
+    <div className="flex-1 min-h-screen" style={{ background: "#F9FAFB" }}>
+      {/* Page Header */}
+      <div className="px-8 py-6 border-b border-slate-200 bg-white">
+        <h1 className="text-2xl font-bold text-slate-900 leading-tight">
+          Fall 2026 Academic Calendar
+        </h1>
+        <p className="text-sm text-slate-500 mt-1">
+          Key dates and deadlines for graduate students
+        </p>
+      </div>
+
+      {/* Cards Grid */}
+      <div className="grid grid-cols-2 gap-5 p-8" style={{ gridTemplateColumns: "repeat(2, 1fr)" }}>
+        {FALL_2026_DATES.map(event => {
+          const accentColor = DATE_CATEGORY_COLORS[event.category] || DATE_CATEGORY_COLORS.info;
+          const badgeStyle  = DATE_BADGE_STYLES[event.badgeLabel]  || DATE_BADGE_STYLES.Info;
+          return (
+            <div
+              key={event.id}
+              className="bg-white rounded-xl border border-slate-200 shadow-sm px-4 py-3 flex items-start gap-3"
+            >
+              {/* Accent bar */}
+              <div
+                className="shrink-0 rounded-full mt-1"
+                style={{ width: 3, height: 32, background: accentColor }}
+              />
+
+              {/* Content */}
+              <div className="flex-1 min-w-0">
+                {/* Title row + badge */}
+                <div className="flex items-start justify-between gap-2 mb-1">
+                  <h3 className="text-[14px] font-bold text-slate-900 leading-tight">
+                    {event.title}
+                  </h3>
+                  <span
+                    className="text-[9px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded border flex-shrink-0"
+                    style={{ background: badgeStyle.bg, color: badgeStyle.text, borderColor: badgeStyle.border }}
+                  >
+                    {event.badgeLabel}
+                  </span>
+                </div>
+
+                {/* Date */}
+                <div className="font-mono text-[9px] tracking-widest font-medium text-slate-400 mb-2">
+                  {event.endDate ? `${event.date} – ${event.endDate}` : event.date}
+                </div>
+
+                {/* Description */}
+                <p className="text-[11px] text-slate-600 leading-relaxed">
+                  {renderWithLinks(event.description)}
+                </p>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(React.createElement(App));
