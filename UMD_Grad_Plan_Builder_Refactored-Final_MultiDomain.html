@@ -280,6 +280,14 @@ const COURSE_TYPE_OVERRIDES = {
   INST767: "DSDA Track",
   INST771: "CSRM Track",
   INST774: "CSRM Track",
+  // FIX (Bug 1 — HCIM capstone recognition): these were previously
+  // unmapped, so when manually placed into a non-pre-populated slot
+  // (e.g. Fall Year 3 / Spring Year 3) they fell through to the generic
+  // "elective" badge instead of being recognized as required HCIM
+  // capstone courses. Mapping them here ensures CORE_CATALOG_LOOKUP
+  // surfaces the correct badge/category everywhere they're placed.
+  INST775: "HCIM Capstone",
+  INST776: "HCIM Capstone",
   INST799: "HCIM Thesis",
 };
 const CORE_CATALOG_LOOKUP = Object.fromEntries(
@@ -695,10 +703,31 @@ const INITIAL_BLUEPRINTS = {
     id: "s2",
     label: "Spring 2",
     semester: "JAN – MAY 2028",
+    // FIX (HCIM Spring 2 electives): Spring 2 previously had zero elective
+    // slots — the only slot was the fixed capstone/thesis course — so there
+    // was structurally nowhere for a student to add or remove electives in
+    // this term for either the capstone (INST776) or thesis (INST799, via
+    // applyWaiversAndDeletions' id-swap for thesisTrack) pathway. Two open
+    // elective slots are added here, matching Fall 2's pattern. This does
+    // raise the HCIM plan's theoretical max above the 30-credit requirement
+    // if both are filled — by design (Option B): once filledCredits reaches
+    // PROGRAM_TOTAL_CREDITS (30), the existing "remove unneeded elective
+    // slot" control (isComplete-gated delete button, empty-slot filter via
+    // deletedElectiveSlots) lets students trim any slots they don't need.
     slots: [{
       idx: "s2_s1",
       type: "fixed",
       id: "INST776",
+      term: "Spring"
+    }, {
+      idx: "s2_e1",
+      type: "elective",
+      slot: "s2_e1",
+      term: "Spring"
+    }, {
+      idx: "s2_e2",
+      type: "elective",
+      slot: "s2_e2",
       term: "Spring"
     }]
   }]
@@ -754,95 +783,51 @@ const PROGRAMS = [{
   desc: "30-credit program: HCI cores, UX electives, and a two-semester capstone.",
   Icon: MousePointer2
 }];
-
 // ─── Excel / Google-Sheets export builder ──────────────────────────────────────
 //
-// Generates the workbook that the "Export Plan" button downloads. The layout is
-// a FIXED presentation template (single sheet "Plan", four-term grid, numeric
-// credits, and a live SUM-of-credits formula). Do not rearrange columns, rename
-// headers, or add spacing beyond what is defined here. Any change to the
-// visible layout or formula is a VERSIONED change: bump EXPORT_TEMPLATE_VERSION
-// and update callers intentionally.
+// Generates the workbook that the "Export Plan" button downloads. The layout
+// dynamically renders EVERY active term in the plan — not just a fixed
+// four-term (2-year) grid — so 2-year plans, and 3-year/extended plans that
+// add Winter/Summer intersessions or a Fall/Spring Year 3, all export
+// correctly with the same professional formatting. Terms are laid out two
+// per row (Fall|Spring side by side, matching the on-screen planner), and
+// each row's height auto-sizes to whichever of its two terms has the most
+// course slots — including any user-added elective slots beyond the
+// original blueprint default, which previously got silently truncated.
 //
-// Grid (1-based rows, cols A–D):
-//   A1:D1  merged program title (bold, larger, left)
-//   row 2  blank
-//   row 3  Fall 1 | Credits | Spring 1 | Credits   (bold headers)
-//   4–6    course title / numeric credits per term
-//   row 7  blank spacer
-//   row 8  Fall 2 | Credits | Spring 2 | Credits   (bold headers)
-//   9–11   course title / numeric credits per term
-//   row 12 blank spacer
-//   C13    "Total Credits" (bold)
-//   D13    =SUM(B4:B6,D4:D6,B9:B11,D9:D11)  (formula, never hardcoded)
+// Grid (1-based rows, cols A–D), repeating per term-pair row:
+//   A1:D1     merged program title (bold, larger, left)
+//   row 2     blank
+//   row N     Term Label | Credits | Term Label | Credits   (bold headers)
+//   N+1..N+k  course title / numeric credits per term (k = max slots in row)
+//   row       blank spacer
+//   ...repeats for every term-pair...
+//   final row "Total Credits" (bold) + live SUM formula (never hardcoded,
+//             built dynamically from every data cell actually written)
+//
+// Any change to the visible layout or formula approach is a VERSIONED
+// change: bump EXPORT_TEMPLATE_VERSION and update callers intentionally.
 
-const EXPORT_TEMPLATE_VERSION = 2; // v2: added borders, header fill, wrapped titles, wider cols/rows
-const SLOTS_PER_EXPORT_TERM = 3;
-const EXPORT_TOTAL_FORMULA = "SUM(B4:B6,D4:D6,B9:B11,D9:D11)";
+const EXPORT_TEMPLATE_VERSION = 3; // v3: dynamic term count (2-year & 3-year+ plans), includes added elective slots, fixes intersession key-format bug
 
-// Fixed grid position of each term block: course column, credits column,
-// header row, and the first of its three course rows.
-const EXPORT_BLOCKS = {
-  "Fall 1": {
-    titleCol: "A",
-    creditsCol: "B",
-    headerRow: 3,
-    firstDataRow: 4
-  },
-  "Spring 1": {
-    titleCol: "C",
-    creditsCol: "D",
-    headerRow: 3,
-    firstDataRow: 4
-  },
-  "Fall 2": {
-    titleCol: "A",
-    creditsCol: "B",
-    headerRow: 8,
-    firstDataRow: 9
-  },
-  "Spring 2": {
-    titleCol: "C",
-    creditsCol: "D",
-    headerRow: 8,
-    firstDataRow: 9
-  }
-};
-// Build the presentation workbook from structured plan data. Generating the
-// export for the same input produces the same layout and formula every time.
+// Build the presentation workbook from structured plan data. `plan.terms` is
+// an ordered array of { label, courses: [{title, credits}, ...] } — one
+// entry per ACTIVE term (however many that is: 4 for a standard 2-year plan,
+// more if intersessions / Year 3 are toggled on). Generating the export for
+// the same input produces the same layout and formula every time.
 function buildPlanWorkbook(plan) {
-  const bold = {
-    bold: true
-  };
-  const titleFont = {
-    bold: true,
-    sz: 16
-  };
-  const left = {
-    horizontal: "left"
-  };
-  const right = {
-    horizontal: "right"
-  };
+  const bold = { bold: true };
+  const titleFont = { bold: true, sz: 16 };
+  const left = { horizontal: "left" };
+  const right = { horizontal: "right" };
   // Wrapped left-align for course titles so long names wrap to a second
   // line instead of clipping, and a vertically-centered right-align for
   // credit numbers so they stay balanced against taller wrapped rows.
-  const titleWrap = {
-    horizontal: "left",
-    vertical: "center",
-    wrapText: true
-  };
-  const creditsCenter = {
-    horizontal: "right",
-    vertical: "center"
-  };
+  const titleWrap = { horizontal: "left", vertical: "center", wrapText: true };
+  const creditsCenter = { horizontal: "right", vertical: "center" };
   // Light header fill, matching the existing Student Resources banner style.
-  const headerFill = {
-    fgColor: { rgb: "F8FAFC" }
-  };
+  const headerFill = { fgColor: { rgb: "F8FAFC" } };
 
-  // Helper to set a cell with value/type/style. Numeric credits are stored as
-  // numbers (t:"n") so the SUM formula works.
   const ws = {};
   // Default thin border applied to every populated data cell so the sheet
   // reads as a clean table instead of loosely-spaced text.
@@ -866,135 +851,106 @@ function buildPlanWorkbook(plan) {
     if (Object.keys(s).length) cell.s = s;
     ws[addr] = cell;
   };
-
-  // 2. Program title — merged A1:D1, bold/larger, left. wrapText lets the
-  //    optional PATCH 10 session-metadata line render above the program name.
-  const titleAlign = {
-    horizontal: "left",
-    vertical: "top",
-    wrapText: true
+  // Empty course cell — still bordered so the grid stays visually complete.
+  const setBlankCell = (addr, align) => {
+    ws[addr] = { t: "s", v: "", s: { border: thinBorder, alignment: align } };
   };
+
+  // 1. Program title — merged A1:D1, bold/larger, left. wrapText lets the
+  //    optional session-metadata line render above the program name.
+  const titleAlign = { horizontal: "left", vertical: "top", wrapText: true };
   const titleHasMeta = plan.programName.includes("\n");
-  setCell("A1", plan.programName, {
-    font: titleFont,
-    align: titleAlign
-  });
+  setCell("A1", plan.programName, { font: titleFont, align: titleAlign });
   // Row 2 intentionally blank.
 
-  // 3 & 4. Term headers + course rows.
-  Object.keys(EXPORT_BLOCKS).forEach(label => {
-    const b = EXPORT_BLOCKS[label];
-    setCell(`${b.titleCol}${b.headerRow}`, label, {
-      font: bold,
-      align: left,
-      fill: headerFill
-    });
-    setCell(`${b.creditsCol}${b.headerRow}`, "Credits", {
-      font: bold,
-      align: right,
-      fill: headerFill
-    });
-    const courses = plan.blocks[label] || [];
-    for (let i = 0; i < SLOTS_PER_EXPORT_TERM; i++) {
-      const row = b.firstDataRow + i;
-      const course = courses[i];
-      if (course) {
-        setCell(`${b.titleCol}${row}`, course.title, {
-          align: titleWrap
-        });
-        setCell(`${b.creditsCol}${row}`, course.credits, {
-          align: creditsCenter,
-          type: "n"
-        });
+  // 2. Term grid — two terms per row (left/right), however many term-pairs
+  //    the active plan has. Row heights and the total-credits formula are
+  //    both computed dynamically from what's actually written, so a 3-year
+  //    plan (or any number of extra terms) formats identically to a
+  //    standard 2-year plan instead of overflowing into a plain-text list.
+  const rowHeights = {}; // 1-based row number -> { hpt }
+  const sumRanges = []; // credit ranges to fold into the grand-total formula
+  let cursorRow = 3; // first header row
+
+  for (let pairStart = 0; pairStart < plan.terms.length; pairStart += 2) {
+    const leftTerm = plan.terms[pairStart];
+    const rightTerm = plan.terms[pairStart + 1]; // may be undefined (odd term count)
+    const headerRow = cursorRow;
+    const firstDataRow = headerRow + 1;
+    const slotCount = Math.max(
+      leftTerm.courses.length,
+      rightTerm ? rightTerm.courses.length : 0,
+      1 // always draw at least one data row so an empty term isn't a bare header
+    );
+
+    // Header cells.
+    setCell(`A${headerRow}`, leftTerm.label, { font: bold, align: left, fill: headerFill });
+    setCell(`B${headerRow}`, "Credits", { font: bold, align: right, fill: headerFill });
+    if (rightTerm) {
+      setCell(`C${headerRow}`, rightTerm.label, { font: bold, align: left, fill: headerFill });
+      setCell(`D${headerRow}`, "Credits", { font: bold, align: right, fill: headerFill });
+    } else {
+      // Odd term out — draw bordered blank header cells on the right side
+      // so the row still reads as a complete table edge.
+      setBlankCell(`C${headerRow}`, left);
+      setBlankCell(`D${headerRow}`, right);
+    }
+
+    // Data rows — sized to whichever side has more course slots.
+    for (let i = 0; i < slotCount; i++) {
+      const row = firstDataRow + i;
+      const lc = leftTerm.courses[i];
+      if (lc) {
+        setCell(`A${row}`, lc.title, { align: titleWrap });
+        setCell(`B${row}`, lc.credits, { align: creditsCenter, type: "n" });
       } else {
-        // Empty slot → still draw bordered, blank cells so the grid stays
-        // visually complete instead of leaving a gap in the table. setCell
-        // skips blank values entirely, so these are written directly.
-        ws[`${b.titleCol}${row}`] = { t: "s", v: "", s: { border: thinBorder, alignment: titleWrap } };
-        ws[`${b.creditsCol}${row}`] = { t: "s", v: "", s: { border: thinBorder, alignment: creditsCenter } };
+        setBlankCell(`A${row}`, titleWrap);
+        setBlankCell(`B${row}`, creditsCenter);
       }
+      const rc = rightTerm ? rightTerm.courses[i] : undefined;
+      if (rc) {
+        setCell(`C${row}`, rc.title, { align: titleWrap });
+        setCell(`D${row}`, rc.credits, { align: creditsCenter, type: "n" });
+      } else {
+        setBlankCell(`C${row}`, titleWrap);
+        setBlankCell(`D${row}`, creditsCenter);
+      }
+      rowHeights[row] = { hpt: 28 };
     }
-  });
 
-  // 5. Total credits row — label (bold) + live SUM formula (never hardcoded).
-  setCell("C13", "Total Credits", {
-    font: bold,
-    align: left,
-    fill: headerFill
-  });
-  ws["D13"] = {
-    t: "n",
-    f: EXPORT_TOTAL_FORMULA,
-    s: {
-      font: bold,
-      alignment: right,
-      fill: headerFill,
-      border: thinBorder
-    }
-  };
+    sumRanges.push(`B${firstDataRow}:B${firstDataRow + slotCount - 1}`);
+    if (rightTerm) sumRanges.push(`D${firstDataRow}:D${firstDataRow + slotCount - 1}`);
 
-  // Worksheet range covers A1:D13.
-  ws["!ref"] = "A1:D13";
-  // Merge for the title.
-  ws["!merges"] = [{
-    s: {
-      r: 0,
-      c: 0
-    },
-    e: {
-      r: 0,
-      c: 3
-    }
-  }];
-  // 6. Column widths: A & C wide (titles), B & D narrow (credits). Widened
-  // from 30→42 so full course titles no longer clip in the default view.
-  ws["!cols"] = [{
-    wch: 42
-  }, {
-    wch: 10
-  }, {
-    wch: 42
-  }, {
-    wch: 10
-  }];
-  // Row heights: give every course-data row (4-6, 9-11) extra height so
-  // wrapped long titles have room to breathe, and give row 1 extra height
-  // when it carries a wrapped session-metadata line.
-  const rows = [];
-  rows[0] = { hpt: titleHasMeta ? 34 : 20 };
-  [4, 5, 6, 9, 10, 11].forEach(r => {
-    rows[r - 1] = { hpt: 28 };
-  });
-  ws["!rows"] = rows;
-  const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, "Plan");
-  
-
-  let currentRow = 15;
-
-  // 1. Extra terms (intersessions)
-  const extraKeys = ["w1_e1", "w1_e2", "w1_e3", "su1_e1", "su1_e2", "su1_e3", "w2_e1", "w2_e2", "w2_e3", "su2_e1", "su2_e2", "su2_e3", "f3_e1", "f3_e2", "f3_e3", "s3_e1", "s3_e2", "s3_e3"];
-  const extraFilled = extraKeys.filter(k => plan.userElectives && plan.userElectives[k]).map(k => {
-    const c = plan.userElectives[k];
-    const prefix = k.split('_')[0].toUpperCase();
-    return `${prefix}: ${c.id} - ${c.title} (${c.credits} cr)`;
-  });
-  if (extraFilled.length > 0) {
-    ws[`A${currentRow}`] = { v: "Additional Courses (Intersessions & Extended Terms):", t: "s", s: { font: { bold: true } } };
-    currentRow++;
-    extraFilled.forEach((line, i) => { 
-      ws[`A${currentRow}`] = { v: line, t: "s" }; 
-      currentRow++;
-    });
-    currentRow++;
+    cursorRow = firstDataRow + slotCount + 1; // +1 blank spacer row before next pair
   }
 
-  // 2. Advising Notes
+  // 3. Total credits row — label (bold) + live SUM formula built from every
+  //    credits range actually written above (never hardcoded row numbers).
+  const totalRow = cursorRow;
+  setCell(`C${totalRow}`, "Total Credits", { font: bold, align: left, fill: headerFill });
+  ws[`D${totalRow}`] = {
+    t: "n",
+    f: `SUM(${sumRanges.join(",")})`,
+    s: { font: bold, alignment: right, fill: headerFill, border: thinBorder }
+  };
+
+  // Column widths: A & C wide (titles), B & D narrow (credits).
+  ws["!cols"] = [{ wch: 42 }, { wch: 10 }, { wch: 42 }, { wch: 10 }];
+  // Merge for the title.
+  ws["!merges"] = [{ s: { r: 0, c: 0 }, e: { r: 0, c: 3 } }];
+  const rows = [];
+  rows[0] = { hpt: titleHasMeta ? 34 : 20 };
+  Object.keys(rowHeights).forEach(r => { rows[Number(r) - 1] = rowHeights[r]; });
+  ws["!rows"] = rows;
+
+  const wb = XLSX.utils.book_new();
+
+  let currentRow = totalRow + 2;
+
+  // 4. Advising Notes
   if (plan.advisingNotes && plan.advisingNotes.trim()) {
     ws[`A${currentRow}`] = { v: "Advising Notes:", t: "s", s: { font: { bold: true } } };
     currentRow++;
-
-    // Split notes by newline so they render nicely across rows
     const noteLines = plan.advisingNotes.split('\n');
     noteLines.forEach(line => {
       ws[`A${currentRow}`] = { v: line, t: "s", s: { alignment: { wrapText: true } } };
@@ -1003,7 +959,7 @@ function buildPlanWorkbook(plan) {
     currentRow++;
   }
 
-  // 3. Student Resources
+  // 5. Student Resources
   ws[`A${currentRow}`] = { v: "STUDENT RESOURCES (FALL 2026)", t: "s", s: { font: { bold: true, sz: 12 }, fill: { fgColor: { rgb: "F1F5F9" } } } };
   currentRow++;
   ws[`A${currentRow}`] = { v: "Important Dates & Information:", t: "s", s: { font: { bold: true } } };
@@ -1031,16 +987,18 @@ function buildPlanWorkbook(plan) {
   currentRow++;
   ws[`A${currentRow}`] = { f: 'HYPERLINK("https://umdischool.atlassian.net/servicedesk/customer/portal/7/group/26/create/89", "• INFO College Teaching Assistantship Application")', s: { font: { color: { rgb: "0563C1" }, underline: true } } };
 
-
   ws["!ref"] = `A1:D${currentRow}`;
+  XLSX.utils.book_append_sheet(wb, ws, "Plan");
 
-return wb;
+  return wb;
 }
 
 // Touch the version constant so it is retained and discoverable by callers /
 // future spec changes (kept intentionally even though the current builder
 // targets v1 directly).
 void EXPORT_TEMPLATE_VERSION;
+
+// ─── Sub-componenvoid EXPORT_TEMPLATE_VERSION;
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
@@ -1199,7 +1157,14 @@ function rebalanceHcimYear2Electives(builtTerms, movedElectiveSlots) {
   [...f2.slots, ...s2.slots].forEach(s => {
     if (s.type === "elective") {
       const key = s.slot || s.idx;
-      const effTerm = movedElectiveSlots[key] || "Fall";
+      // FIX (HCIM Spring 2 electives): previously this defaulted every
+      // unmoved elective to "Fall", which was safe when f2_e1/f2_e2 were the
+      // only elective slots (both born in Fall 2). Now that s2_e1/s2_e2 exist
+      // as native Spring 2 electives, defaulting to "Fall" would incorrectly
+      // pull them into Fall 2 on every render. Default to the slot's own
+      // blueprint term instead, so unmoved slots stay where they started;
+      // an explicit entry in movedElectiveSlots still overrides this.
+      const effTerm = movedElectiveSlots[key] || s.term || "Fall";
       // Mark the slot movable and tag its current term so the UI can render a
       // move button and the correct destination label.
       const moved = { ...s, movable: true, term: effTerm };
@@ -1275,6 +1240,24 @@ function App() {
   };
 
   const [deletedCoreSlots, setDeletedCoreSlots] = useState({});
+  // FIX (Bug 2 — universal elective-slot deletion): tracks open elective
+  // slots (empty, no course placed) that the user has chosen to remove once
+  // the program's total credit requirement is already satisfied. Keyed by
+  // the same makeSlotKey(termId, slotIdOrIdx) scheme used elsewhere so it
+  // works uniformly across blueprint terms and generated intersession/
+  // Year-3+ terms alike.
+  const [deletedElectiveSlots, setDeletedElectiveSlots] = useState({});
+  // NEW (MIM add/delete electives — all terms): tracks elective slots the
+  // user has dynamically ADDED to a MIM term beyond the blueprint default.
+  // Keyed by termId -> array of stable slot keys. Merged into that term's
+  // slots inside the `terms` useMemo below, so added slots behave exactly
+  // like blueprint-native elective slots (same course picker, drag/drop,
+  // badge styling) with no separate render path required.
+  const [addedElectiveSlots, setAddedElectiveSlots] = useState({});
+  // NEW: monotonically increasing counter so every dynamically-added elective
+  // slot gets a globally-unique key, even across repeated add/remove cycles
+  // within the same term.
+  const [nextAddedSlotSeq, setNextAddedSlotSeq] = useState(1);
   // NEW: HCIM movable cores can be reassigned between Fall 1 and Spring 1.
   // Keyed by course id; absence means "use the blueprint's default term".
   const [movedCourses, setMovedCourses] = useState({});
@@ -1355,8 +1338,35 @@ function App() {
       rebalanceHcimYear1Terms(built, movedCourses);
       rebalanceHcimYear2Electives(built, movedElectiveSlots);
     }
+
+    // UPDATED (MIM + HCIM add/delete electives — all terms): append any
+    // user-added elective slots for this program to their owning term.
+    // Originally MIM-only; now available in HCIM too so students in either
+    // program can add extra elective slots to any term (Fall 1, Spring 1,
+    // Fall 2, Spring 2), across every MIM track (DSDA, CSRM, FIP) and the
+    // HCIM blueprint. Runs AFTER the HCIM Year-1/Year-2 rebalancing above,
+    // so added slots are appended to each term's final slot list and are
+    // NOT swept into the movable-elective rebalancing logic — they always
+    // stay in the term they were added to, same as MIM added slots. Each
+    // added slot carries the term's native "Fall"/"Spring" value so it
+    // renders and filters (via TRACK_PREFERRED lookups, badge styling,
+    // credit sums) identically to a blueprint-native elective slot.
+    if (program === "MIM" || program === "HCIM") {
+      built.forEach(t => {
+        const extras = addedElectiveSlots[t.id];
+        if (extras && extras.length) {
+          t.slots = [...t.slots, ...extras.map(slotKey => ({
+            idx: slotKey,
+            type: "elective",
+            slot: slotKey,
+            term: t.id.startsWith("f") ? "Fall" : "Spring",
+            userAdded: true
+          }))];
+        }
+      });
+    }
     return built;
-  }, [blueprintId, program, isAlum, deletedCoreSlots, movedCourses, thesisTrack, movedElectiveSlots]);
+  }, [blueprintId, program, isAlum, deletedCoreSlots, movedCourses, thesisTrack, movedElectiveSlots, addedElectiveSlots]);
   const displayTerms = [...terms];
   if (showWinter1) displayTerms.splice(1, 0, makeIntersessionTerm("w1", "Winter (Year 1)", "Winter"));
   if (showSummer1) displayTerms.splice(displayTerms.findIndex(t => t.id === "s1") + 1, 0, makeIntersessionTerm("su1", "Summer (Year 1)", "Summer"));
@@ -1364,6 +1374,33 @@ function App() {
   if (showSummer2) displayTerms.splice(displayTerms.findIndex(t => t.id === "s2") + 1, 0, makeIntersessionTerm("su2", "Summer (Year 2)", "Summer"));
   if (showFall3) displayTerms.push(makeIntersessionTerm("f3", "Fall (Year 3)", "Fall"));
   if (showSpring3) displayTerms.push(makeIntersessionTerm("s3", "Spring (Year 3)", "Spring"));
+
+  // FIX (Fall 3 / Spring 3 + intersession add-elective bug): the "+ Add
+  // Elective" button calls addElectiveSlot(termId), which correctly stores
+  // the new slot key in addedElectiveSlots[termId] for ANY termId. But the
+  // code that actually appends those stored slots onto a term's `.slots`
+  // array only ran inside the `terms` useMemo above, which only ever
+  // builds the four base blueprint terms (f1/s1/f2/s2). Winter/Summer
+  // intersession and Fall 3/Spring 3 terms are constructed fresh via
+  // makeIntersessionTerm() right here — AFTER that useMemo — so any added
+  // slot for those terms was stored in state but never merged into the
+  // term object actually rendered, making the button appear to do nothing.
+  // Re-run the same merge here for every intersession/Year-3 term (base
+  // terms are already merged, so they're skipped to avoid double-adding).
+  const INTERSESSION_TERM_IDS = new Set(["w1", "su1", "w2", "su2", "f3", "s3"]);
+  displayTerms.forEach(t => {
+    if (!INTERSESSION_TERM_IDS.has(t.id)) return;
+    const extras = addedElectiveSlots[t.id];
+    if (extras && extras.length) {
+      t.slots = [...t.slots, ...extras.map(slotKey => ({
+        idx: slotKey,
+        type: "elective",
+        slot: slotKey,
+        term: "Both",
+        userAdded: true
+      }))];
+    }
+  });
 
 
   // Derived contextual original term mapping lookup
@@ -1391,9 +1428,18 @@ function App() {
     });
     return counts;
   }, [userElectives]);
+  // FIX (Bug 1 — MIM Year-3 capstone recognition, all tracks): this
+  // previously iterated only `terms` (the standard 4-term blueprint output),
+  // so ANY course placed into a generated intersession/Year-3+ term
+  // (Winter/Summer Year 1 & 2, Fall/Spring Year 3) — including INFM737 for
+  // MIM DSDA/CSRM/FIP part-time plans, or INST775/INST776/INST799 for HCIM —
+  // was silently excluded from the credit total. Switching to `displayTerms`
+  // (which is `terms` plus every currently-visible generated intersession
+  // term) ensures every placed course counts everywhere it's placed, for
+  // every program and track.
   const filledCredits = useMemo(() => {
     let sum = 0;
-    terms.forEach(t => {
+    displayTerms.forEach(t => {
       t.slots.forEach(s => {
         if (s.type !== "elective" && s.id) {
           sum += CORE_CATALOG_LOOKUP[s.id]?.credits ?? 3;
@@ -1406,7 +1452,7 @@ function App() {
       });
     });
     return sum;
-  }, [terms, userElectives]);
+  }, [displayTerms, userElectives]);
   const progress = Math.min(filledCredits / TOTAL_CREDITS * 100, 100);
   const isComplete = filledCredits >= TOTAL_CREDITS;
 
@@ -1500,30 +1546,53 @@ function App() {
       };
     };
 
-    // Collect, in slot order, the courses for one app term (clamped to the
-    // template's 3 slots; the planner never exceeds 3 per term).
-    const collectTerm = termId => {
-      const term = terms.find(t => t.id === termId);
+    // UPDATED (2-year & 3-year+ export fix): collect EVERY filled course
+    // slot for a given term, with no 3-slot clamp. Previously this sliced
+    // to SLOTS_PER_EXPORT_TERM (3), which silently truncated any 4th+
+    // elective a student added via the "+ Add Elective" feature. The Excel
+    // builder now sizes each term-pair row to whatever the largest slot
+    // count actually is, so nothing gets cut off.
+    // FIX (intersession/Year-3 export bug): this previously looked the term
+    // up in `terms` — the base 4-term blueprint array (f1/s1/f2/s2 only).
+    // Winter/Summer intersessions and Fall/Spring Year 3 terms exist ONLY
+    // in `displayTerms` (they're spliced/pushed onto a copy of `terms`
+    // higher up), so `terms.find(t => t.id === "f3")` always returned
+    // undefined and this bailed out with an empty array — silently
+    // dropping every course placed into ANY intersession or Year-3 term
+    // from the export, not just Fall 3/Spring 3. Now takes the already-
+    // resolved term object directly instead of re-looking it up by id.
+    const collectTerm = term => {
       const out = [];
       if (!term) return out;
       term.slots.forEach(slot => {
         const resolved = resolveSlot(term, slot);
         if (resolved) out.push(resolved);
       });
-      return out.slice(0, SLOTS_PER_EXPORT_TERM);
+      return out;
     };
 
-    // Map the app's four terms (f1/s1/f2/s2) onto the fixed export blocks.
+    // UPDATED (2-year & 3-year+ export fix): previously this only ever
+    // exported the four standard blueprint terms (f1/s1/f2/s2), hardcoded
+    // into a fixed EXPORT_BLOCKS grid. Any Winter/Summer intersession or
+    // Fall/Spring Year 3 term a student enabled fell back to a separate
+    // key-mismatched plain-text list further down the sheet (the
+    // "w1_e1"-style keys there never matched the app's actual
+    // "w1::e1"-style slot keys, so those courses silently vanished from
+    // the export entirely). Now every ACTIVE term — from `displayTerms`,
+    // which already includes any enabled intersession/Year-3 terms in the
+    // correct chronological order — is collected uniformly through the
+    // same collectTerm()/resolveSlot() path used for the standard terms,
+    // so a 3-year plan exports with the same clean, bordered grid
+    // formatting as a 2-year plan, just with more term-pair rows.
+    const exportTerms = displayTerms.map(term => ({
+      label: term.label,
+      courses: collectTerm(term)
+    }));
+
     const wb = buildPlanWorkbook({
       advisingNotes: isSelfServiceMode ? "" : advisingNotes,
-      userElectives,
       programName,
-      blocks: {
-        "Fall 1": collectTerm("f1"),
-        "Spring 1": collectTerm("s1"),
-        "Fall 2": collectTerm("f2"),
-        "Spring 2": collectTerm("s2")
-      }
+      terms: exportTerms
     });
     const filename = program === "MIM" ? `MIM_Academic_Plan_${track}.xlsx` : `HCIM_Academic_Plan.xlsx`;
     XLSX.writeFile(wb, filename);
@@ -1604,6 +1673,77 @@ function App() {
     }));
     removeElective(uniqueKey);
   }
+
+  // FIX (Bug 2 — universal elective-slot deletion): removes an EMPTY open
+  // elective slot (no course placed) in either MIM or HCIM, at any time
+  // (no longer gated behind reaching the program's total credit
+  // requirement — see the UPDATED note inside the function body). Works for
+  // any term — standard blueprint terms as well as generated
+  // intersession/Year-3+ terms — since both use the same
+  // makeSlotKey(termId, slotIdOrIdx) addressing scheme.
+  function removeOpenElectiveSlot(termId, slotStableKey) {
+    // UPDATED (MIM + HCIM — always-available elective slot deletion): this
+    // previously required isComplete (the program's total credit
+    // requirement already met) before a blueprint-native empty elective slot
+    // could be removed. Per request, students can now delete any empty
+    // elective slot in either program at any time, not just after reaching
+    // the credit minimum. NOTE: this means a student can delete slots down
+    // below the program's required credit total if they choose to — the
+    // progress bar / credit counter will simply reflect the lower total
+    // until they add slots or courses back.
+    //
+    // NOTE: elective slots already carry a globally-stable `slot.slot` key
+    // (the same one used for userElectives lookups), so we store deletions
+    // keyed directly by that value rather than re-wrapping it with
+    // makeSlotKey — avoids a double-prefixed key mismatch against the
+    // `!deletedElectiveSlots[slot.slot || ""]` check used when filtering
+    // term.slots for render.
+    setDeletedElectiveSlots(prev => ({
+      ...prev,
+      [slotStableKey]: true
+    }));
+  }
+
+  // UPDATED (MIM + HCIM add/delete electives — all terms): create a
+  // brand-new, empty elective slot in the given term. Originally MIM-only;
+  // now available in HCIM too, so students in either program can add an
+  // extra elective slot to any term. Uses a globally-unique key (via
+  // nextAddedSlotSeq) so repeated add/remove cycles in the same term never
+  // collide with a prior slot's leftover userElectives/deletedElectiveSlots
+  // entry.
+  function addElectiveSlot(termId) {
+    if (program !== "MIM" && program !== "HCIM") return;
+    const slotKey = `${termId}_added_${nextAddedSlotSeq}`;
+    setNextAddedSlotSeq(seq => seq + 1);
+    setAddedElectiveSlots(prev => ({
+      ...prev,
+      [termId]: [...(prev[termId] || []), slotKey]
+    }));
+  }
+
+  // NEW (MIM add/delete electives — all terms): remove a user-added elective
+  // slot entirely (not just hide it, since it has no blueprint backing to
+  // fall back to). Also clears any course placed in it and any leftover
+  // deletion-filter entry, so the key can be fully forgotten.
+  function removeAddedElectiveSlot(termId, slotKey) {
+    setAddedElectiveSlots(prev => ({
+      ...prev,
+      [termId]: (prev[termId] || []).filter(k => k !== slotKey)
+    }));
+    setUserElectives(prev => {
+      const next = { ...prev };
+      delete next[slotKey];
+      return next;
+    });
+    setDeletedElectiveSlots(prev => {
+      if (!(slotKey in prev)) return prev;
+      const next = { ...prev };
+      delete next[slotKey];
+      return next;
+    });
+  }
+
+
 
   // NEW: Toggle a movable HCIM core between Fall 1 and Spring 1.
   function moveCourseTerm(courseId) {
@@ -1783,6 +1923,12 @@ function App() {
                 setMovedCourses({});
                 setMovedElectiveSlots({});
                 setThesisTrack(false);
+                // UPDATED (MIM + HCIM add/delete electives — all terms):
+                // also clear dynamically-added elective slots on program
+                // switch so a stale f1_added_3 key from a prior MIM or HCIM
+                // session never resurfaces.
+                setAddedElectiveSlots({});
+                setDeletedElectiveSlots({});
                 if (id === "HCIM") setIsAlum(false);
               }} className="w-full text-left rounded-lg p-3 transition-all border duration-150" style={{
                 background: active ? "#FFF5F5" : "#FAFAFA",
@@ -1898,6 +2044,13 @@ function App() {
                 // state so a track switch starts from a clean blueprint.
                 setMovedCourses({});
                 setMovedElectiveSlots({});
+                // NEW (MIM add/delete electives — all terms): clear
+                // dynamically-added elective slots on track switch too,
+                // since DSDA/CSRM/FIP have different term structures and a
+                // stale added-slot key could point at a term that no longer
+                // matches the new track's shape.
+                setAddedElectiveSlots({});
+                setDeletedElectiveSlots({});
               }} className="w-full text-left rounded-lg p-3 transition-all border duration-150" style={{
                 background: active ? "#FFF5F5" : "#FAFAFA",
                 borderColor: active ? "#FECACA" : "#E2E8F0",
@@ -2159,7 +2312,20 @@ function App() {
                 </div>
 
                 <div className="p-4 flex flex-col gap-3 flex-1 justify-start">
-                  {term.slots.map((slot, si) => {
+                  {term.slots.filter((slot) => {
+                    // FIX (Bug 2 — universal elective-slot deletion): hide any
+                    // empty elective slot the user has deleted via
+                    // removeOpenElectiveSlot. Only ever applies to slots with
+                    // no course placed at deletion time, so filled slots are
+                    // never hidden by this filter — deleting a filled slot
+                    // instead runs through removeElectiveSlotSafely, which
+                    // clears the course first via removeElective. Uses
+                    // slot.slot directly (the same stable key elective slots
+                    // already use for userElectives lookups) so addressing
+                    // stays consistent with removeOpenElectiveSlot below.
+                    if (slot.type !== "elective") return true;
+                    return !deletedElectiveSlots[slot.slot || ""];
+                  }).map((slot, si) => {
                 const slotKey = slot.type === "elective" ? slot.slot || "" : makeSlotKey(term.id, slot.id);
                 const activeElectiveObj = slot.type === "elective" ? userElectives[slotKey] : undefined;
                 const courseMeta = slot.id ? CORE_CATALOG_LOOKUP[slot.id] : activeElectiveObj;
@@ -2211,6 +2377,34 @@ function App() {
                       moveElectiveTerm(slotKey);
                     }} className="absolute top-1 right-1 w-6 h-6 rounded flex items-center justify-center opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 focus-visible:opacity-100 [@media(pointer:coarse)]:opacity-100 transition-all bg-white/80 border border-slate-200 text-slate-400 hover:bg-blue-50 hover:text-blue-600" title={`Move this elective slot to ${slot.term === "Fall" ? "Spring 2" : "Fall 2"}`}>
                               <ArrowLeftRight size={11} />
+                            </button>}
+                          {/* FIX (Bug 2 — universal elective-slot deletion):
+                              surface a delete affordance on every EMPTY open
+                              elective slot in both MIM and HCIM, at any time
+                              (no longer gated by isComplete — see the
+                              UPDATED comment just below for the current
+                              rule). Only rendered for empty slots — filled
+                              slots keep their existing "remove selected
+                              elective" (✕) control untouched. */}
+                          {/* UPDATED (MIM + HCIM — always-available elective
+                              slot deletion): empty elective slots can now be
+                              removed at any time in both programs, not just
+                              once isComplete (credit requirement met).
+                              User-added slots use removeAddedElectiveSlot
+                              (fully forgets the key); blueprint-native slots
+                              use removeOpenElectiveSlot (hides via the
+                              deletedElectiveSlots filter, since they have no
+                              way to be un-created entirely). */}
+                          {slot.userAdded ? <button onClick={e => {
+                      e.stopPropagation();
+                      removeAddedElectiveSlot(term.id, slot.slot);
+                    }} aria-label="Remove added elective slot" title="Remove this added elective slot" className="absolute bottom-1 right-1 w-6 h-6 rounded flex items-center justify-center opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 focus-visible:opacity-100 [@media(pointer:coarse)]:opacity-100 transition-all bg-white/80 border border-slate-200 text-slate-400 hover:bg-red-50 hover:text-red-600">
+                              <X size={12} />
+                            </button> : <button onClick={e => {
+                      e.stopPropagation();
+                      removeOpenElectiveSlot(term.id, slot.slot || si);
+                    }} aria-label="Remove unneeded elective slot" title="Remove this unused elective slot" className="absolute bottom-1 right-1 w-6 h-6 rounded flex items-center justify-center opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 focus-visible:opacity-100 [@media(pointer:coarse)]:opacity-100 transition-all bg-white/80 border border-slate-200 text-slate-400 hover:bg-red-50 hover:text-red-600">
+                              <X size={12} />
                             </button>}
                         </div>;
                 }
@@ -2276,6 +2470,17 @@ function App() {
                         </div>
                       </div>;
               })}
+                  {/* UPDATED (MIM + HCIM add/delete electives — all terms):
+                      lets students add an extra elective slot to any term
+                      (Fall 1, Spring 1, Fall 2, Spring 2) beyond the
+                      blueprint default. Originally MIM-only (all three
+                      tracks); now also available for HCIM. Hidden only for
+                      skeleton/no-program states, since addElectiveSlot()
+                      itself is a no-op outside MIM/HCIM. */}
+                  {(program === "MIM" || program === "HCIM") && <button onClick={() => addElectiveSlot(term.id)} className="w-full rounded-lg border-2 border-dashed border-slate-200 text-slate-400 hover:border-blue-300 hover:text-blue-500 hover:bg-blue-50/50 transition-all duration-150 flex items-center justify-center gap-1.5 py-2 text-[11px] font-medium" title="Add another elective slot to this term">
+                    <Plus size={12} />
+                    Add Elective
+                  </button>}
                 </div>
               </div>;
         })}
