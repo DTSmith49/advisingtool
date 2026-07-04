@@ -80,7 +80,7 @@
 </head>
 <body>
   <div id="welcome-banner" style="display:none;">
-    <span>UMD INFO College Graduate Plan Builder — use this tool to map out your MIM, HCIM, or MLIS course plan semester by semester.</span>
+    <span>UMD INFO College Graduate Plan Builder — use this tool to map out your MIM or HCIM course plan semester by semester.</span>
     <button id="welcome-banner-close" title="Dismiss" aria-label="Dismiss banner">×</button>
   </div>
   <script>
@@ -254,8 +254,6 @@ const COURSE_CATALOG = [
   { id: "LBSC742", title: "Collaborative Instructional Design and Evaluation", credits: 3, domains: ["Archives & Museum"], term: "Fall", desc: "School librarians' collaborative role.", tags: ["instructional design"] },
   { id: "LBSC749", title: "Internship in School Libraries", credits: 3, domains: ["Archives & Museum"], term: "Fall", desc: "Supervised internship experience.", tags: ["internship"], maxRepeats: 2 },
   { id: "LBSC751", title: "Research and Teaching Fellowship II", credits: 1, domains: ["Archives & Museum"], term: "Fall", desc: "Teacher training program.", tags: ["fellowship"] },
-  { id: "INST701", title: "Introduction to Research Methods", credits: 3, domains: ["Research & Capstone"], term: "Both", desc: "Introduction to research methods for MLIS thesis option.", tags: ["research methods"] },
-  { id: "LBSC799", title: "Master\'s Thesis Research", credits: 3, domains: ["Research & Capstone"], term: "Both", desc: "MLIS Master\'s Thesis Research (register twice for 6 credits total).", tags: ["thesis"] },
   { id: "LBSC770", title: "Metadata and Tools for Information Professionals", credits: 3, domains: ["Archives & Museum"], term: "Fall", desc: "Information representation.", tags: ["metadata"] },
 ];
 // FIX (Data Integrity #1): type overrides for the ~21 courses that are NOT
@@ -291,13 +289,6 @@ const COURSE_TYPE_OVERRIDES = {
   INST775: "HCIM Capstone",
   INST776: "HCIM Capstone",
   INST799: "HCIM Thesis",
-  INST701: "MLIS Thesis",
-  LBSC799: "MLIS Thesis",
-  INST600: "MLIS Core",
-  LBSC602: "MLIS Core",
-  LBSC631: "MLIS Core",
-  LBSC671: "MLIS Core",
-  LBSC707: "MLIS Field Study",
 };
 const CORE_CATALOG_LOOKUP = Object.fromEntries(
   COURSE_CATALOG.map(c => [c.id, {
@@ -324,15 +315,6 @@ const TRACK_PREFERRED = {
   FIP: DOMAINS,
   HCIM: ["HCI, Design & Games"]
 };
-const MLIS_SPECIALIZATIONS = [
-  { id: "Archives & Digital Curation", label: "Archives & Digital Curation", desc: "Records management, digital preservation, and long-term access to collections." },
-  { id: "Diversity and Inclusion", label: "Diversity & Inclusion", desc: "Information services, resources, and outreach for diverse and underserved populations." },
-  { id: "School Library Certification", label: "School Library Certification", desc: "K-12 school library. Uses LBSC749 field study (two school placements) instead of LBSC707." },
-  { id: "Youth Experience (YX)", label: "Youth Experience (YX)", desc: "Programs, policies, and technology supporting children and adolescents." },
-  { id: "Intelligence & Analytics", label: "Intelligence & Analytics", desc: "Information security, data analysis, research methods, and intelligence applications." },
-  { id: "Legal Informatics", label: "Legal Informatics", desc: "Legal research for law libraries, government agencies, and special libraries." },
-  { id: "Individualized Program Plan (IPP)", label: "Individualized Program Plan (IPP)", desc: "Design your own course of study with advisor guidance across any knowledge area." },
-];
 const TRACKS = [{
   id: "DSDA",
   label: "Data Science & Analytics",
@@ -373,21 +355,6 @@ const CATEGORY_STYLES = {
     bg: "#ECFEFF",
     text: "#155E75",
     border: "#A5F3FC"
-  },
-  "MLIS Core": {
-    bg: "#FFF7ED",
-    text: "#9A3412",
-    border: "#FED7AA"
-  },
-  "MLIS Thesis": {
-    bg: "#F0FDF4",
-    text: "#166534",
-    border: "#BBF7D0"
-  },
-  "MLIS Field Study": {
-    bg: "#EFF6FF",
-    text: "#1E40AF",
-    border: "#BFDBFE"
   },
   "Shared Core": {
     bg: "#FFFBEB",
@@ -662,70 +629,6 @@ const INITIAL_BLUEPRINTS = {
       term: "Spring"
     }]
   }],
-  // MLIS Field Study pathway: 4 cores (12 cr) + 7 electives (21 cr) + LBSC707 (3 cr) = 36 cr
-  // LBSC631 and LBSC671 are offered in Fall; placed in Spring 1 slot but marked term:"Fall"
-  // so they'll still show in the Fall-term filter — advisor can adjust as needed.
-  MLIS_FIELD_STUDY: [{
-    id: "f1", label: "Fall 1", semester: "AUG – DEC 2026",
-    slots: [
-      { idx: "f1_s1", type: "fixed", id: "INST600", term: "Fall" },
-      { idx: "f1_s2", type: "fixed", id: "LBSC602", term: "Fall" },
-      { idx: "f1_e1", type: "elective", slot: "f1_e1", term: "Fall" },
-    ]
-  }, {
-    id: "s1", label: "Spring 1", semester: "JAN – MAY 2027",
-    slots: [
-      { idx: "s1_s1", type: "fixed", id: "LBSC631", term: "Both" },
-      { idx: "s1_s2", type: "fixed", id: "LBSC671", term: "Both" },
-      { idx: "s1_e1", type: "elective", slot: "s1_e1", term: "Spring" },
-    ]
-  }, {
-    id: "f2", label: "Fall 2", semester: "AUG – DEC 2027",
-    slots: [
-      { idx: "f2_e1", type: "elective", slot: "f2_e1", term: "Fall" },
-      { idx: "f2_e2", type: "elective", slot: "f2_e2", term: "Fall" },
-      { idx: "f2_e3", type: "elective", slot: "f2_e3", term: "Fall" },
-    ]
-  }, {
-    id: "s2", label: "Spring 2", semester: "JAN – MAY 2028",
-    slots: [
-      { idx: "s2_e1", type: "elective", slot: "s2_e1", term: "Spring" },
-      { idx: "s2_e2", type: "elective", slot: "s2_e2", term: "Spring" },
-      { idx: "s2_e3", type: "elective", slot: "s2_e3", term: "Spring" },
-      { idx: "s2_fs", type: "fixed", id: "LBSC707", term: "Both" },
-    ]
-  }],
-  // MLIS Thesis pathway: 4 cores (12 cr) + 5 electives (15 cr) + INST701 (3 cr) + LBSC799×2 (6 cr) = 36 cr
-  MLIS_THESIS: [{
-    id: "f1", label: "Fall 1", semester: "AUG – DEC 2026",
-    slots: [
-      { idx: "f1_s1", type: "fixed", id: "INST600", term: "Fall" },
-      { idx: "f1_s2", type: "fixed", id: "LBSC602", term: "Fall" },
-      { idx: "f1_e1", type: "elective", slot: "f1_e1", term: "Fall" },
-    ]
-  }, {
-    id: "s1", label: "Spring 1", semester: "JAN – MAY 2027",
-    slots: [
-      { idx: "s1_s1", type: "fixed", id: "LBSC631", term: "Both" },
-      { idx: "s1_s2", type: "fixed", id: "LBSC671", term: "Both" },
-      { idx: "s1_s3", type: "fixed", id: "INST701", term: "Both" },
-    ]
-  }, {
-    id: "f2", label: "Fall 2", semester: "AUG – DEC 2027",
-    slots: [
-      { idx: "f2_e1", type: "elective", slot: "f2_e1", term: "Fall" },
-      { idx: "f2_e2", type: "elective", slot: "f2_e2", term: "Fall" },
-      { idx: "f2_th", type: "fixed", id: "LBSC799", term: "Both" },
-    ]
-  }, {
-    id: "s2", label: "Spring 2", semester: "JAN – MAY 2028",
-    slots: [
-      { idx: "s2_e1", type: "elective", slot: "s2_e1", term: "Spring" },
-      { idx: "s2_e2", type: "elective", slot: "s2_e2", term: "Spring" },
-      { idx: "s2_e3", type: "elective", slot: "s2_e3", term: "Spring" },
-      { idx: "s2_th", type: "fixed", id: "LBSC799", term: "Both" },
-    ]
-  }],
   // NEW: HCIM (MS in Human-Computer Interaction) blueprint, capstone path.
   // Mirrors the program's published sample plan:
   //   Fall 1:   INST631, INST630, INST710
@@ -861,8 +764,7 @@ if (__DEV__) {
 // NEW: Program-aware total credit requirements. MIM = 36, HCIM = 30.
 const PROGRAM_TOTAL_CREDITS = {
   MIM: 36,
-  HCIM: 30,
-  MLIS: 36
+  HCIM: 30
 };
 
 // NEW: Program metadata for the program-selection UI and header labelling.
@@ -873,13 +775,6 @@ const PROGRAMS = [{
   fullName: "Master of Information Management",
   desc: "36-credit program with selectable tracks and a BS InfoSci alum waiver pathway.",
   Icon: Layers
-}, {
-  id: "MLIS",
-  label: "Library & Information Science",
-  code: "MLIS",
-  fullName: "Master of Library and Information Science",
-  desc: "36-credit ALA-accredited program: 4 core courses, 7 electives, and a field study or thesis completion pathway.",
-  Icon: BookMarked
 }, {
   id: "HCIM",
   label: "Human-Computer Interaction",
@@ -1369,9 +1264,6 @@ function App() {
   // NEW: HCIM culminating-experience pathway. false = capstone (INST775 +
   // INST776); true = thesis (INST799 in Fall 2 and Spring 2, 6 cr total).
   const [thesisTrack, setThesisTrack] = useState(false);
-  // MLIS-specific state
-  const [mlisThesisTrack, setMlisThesisTrack] = useState(false);
-  const [mlisSpecialization, setMlisSpecialization] = useState(null);
   // NEW: HCIM Year-2 electives (slot keys f2_e1, f2_e2) may be shifted between
   // Fall 2 and Spring 2 independently. Keyed by elective slot key; absence
   // means "use the slot's blueprint default term" (Fall 2). A selected
@@ -1404,9 +1296,7 @@ function App() {
 
   // NEW: The active blueprint key is the program itself for HCIM, otherwise the
   // selected MIM track.
-  const blueprintId = program === "HCIM" ? "HCIM"
-    : program === "MLIS" ? (mlisThesisTrack ? "MLIS_THESIS" : "MLIS_FIELD_STUDY")
-    : track;
+  const blueprintId = program === "HCIM" ? "HCIM" : track;
 
   // NEW: Total credits required depends on the selected program (MIM 36 / HCIM 30).
   const TOTAL_CREDITS = PROGRAM_TOTAL_CREDITS[program] || 36;
@@ -1461,7 +1351,7 @@ function App() {
     // added slot carries the term's native "Fall"/"Spring" value so it
     // renders and filters (via TRACK_PREFERRED lookups, badge styling,
     // credit sums) identically to a blueprint-native elective slot.
-    if (program === "MIM" || program === "HCIM" || program === "MLIS") {
+    if (program === "MIM" || program === "HCIM") {
       built.forEach(t => {
         const extras = addedElectiveSlots[t.id];
         if (extras && extras.length) {
@@ -1704,7 +1594,7 @@ function App() {
       programName,
       terms: exportTerms
     });
-    const filename = program === "MIM" ? `MIM_Academic_Plan_${track}.xlsx` : program === "MLIS" ? `MLIS_Academic_Plan_${mlisThesisTrack ? "Thesis" : "FieldStudy"}.xlsx` : `HCIM_Academic_Plan.xlsx`;
+    const filename = program === "MIM" ? `MIM_Academic_Plan_${track}.xlsx` : `HCIM_Academic_Plan.xlsx`;
     XLSX.writeFile(wb, filename);
     setExportError(null);
    } catch (err) {
@@ -1822,7 +1712,7 @@ function App() {
   // collide with a prior slot's leftover userElectives/deletedElectiveSlots
   // entry.
   function addElectiveSlot(termId) {
-    if (program !== "MIM" && program !== "HCIM" && program !== "MLIS") return;
+    if (program !== "MIM" && program !== "HCIM") return;
     const slotKey = `${termId}_added_${nextAddedSlotSeq}`;
     setNextAddedSlotSeq(seq => seq + 1);
     setAddedElectiveSlots(prev => ({
@@ -2033,8 +1923,6 @@ function App() {
                 setMovedCourses({});
                 setMovedElectiveSlots({});
                 setThesisTrack(false);
-                setMlisThesisTrack(false);
-                setMlisSpecialization(null);
                 // UPDATED (MIM + HCIM add/delete electives — all terms):
                 // also clear dynamically-added elective slots on program
                 // switch so a stale f1_added_3 key from a prior MIM or HCIM
@@ -2081,55 +1969,6 @@ function App() {
             })}
             </div>
           </div>
-
-          {/* MLIS-only: Completion Pathway (Field Study vs Thesis) */}
-          {program === "MLIS" && <div className="bg-white rounded-xl overflow-hidden border border-slate-200 shadow-sm">
-            <div className="flex items-center gap-2 px-4 py-3 border-b border-slate-100">
-              <GraduationCap size={13} style={{color: "#E51C24"}} />
-              <h2 className="text-[11px] font-bold uppercase tracking-widest text-slate-500">
-                <span style={{fontSize:"0.65rem",color:"#999",fontWeight:"normal",marginRight:"4px"}}>②</span>Completion Pathway
-              </h2>
-            </div>
-            <div className="p-4 flex flex-col gap-3">
-              <div className="flex items-center justify-between gap-3 p-3 rounded-lg border" style={{background: mlisThesisTrack ? "#F0FDF4" : "#EFF6FF", borderColor: mlisThesisTrack ? "#BBF7D0" : "#BFDBFE"}}>
-                <div className="min-w-0">
-                  <p className="text-[13px] font-semibold text-slate-800 leading-tight">Thesis Track</p>
-                  <p className="text-[11px] text-slate-400 mt-0.5 leading-relaxed">
-                    {mlisThesisTrack ? "INST701 (3 cr) + LBSC799×2 (6 cr) replace 3 electives." : "Field Study: LBSC707 (3 cr) — 120-hour supervised placement."}
-                  </p>
-                </div>
-                <ToggleSwitch checked={mlisThesisTrack} onChange={() => { setMlisThesisTrack(v => !v); setUserElectives({}); setDeletedCoreSlots({}); }} />
-              </div>
-              {mlisThesisTrack && <div className="p-3 rounded-lg border text-[10px] leading-relaxed" style={{background:"#F0FDF4", borderColor:"#BBF7D0", color:"#166534"}}>
-                <strong>Thesis pathway:</strong> 4 cores (12 cr) + 5 electives (15 cr) + INST701 (3 cr) + LBSC799 ×2 (6 cr) = 36 cr
-              </div>}
-              {!mlisThesisTrack && <div className="p-3 rounded-lg border text-[10px] leading-relaxed" style={{background:"#EFF6FF", borderColor:"#BFDBFE", color:"#1E40AF"}}>
-                <strong>Field study pathway:</strong> 4 cores (12 cr) + 7 electives (21 cr) + LBSC707 (3 cr) = 36 cr.<br/>
-                School Library specialization: substitute LBSC749 for LBSC707.
-              </div>}
-            </div>
-          </div>}
-
-          {/* MLIS-only: Focus Area / Specialization selector */}
-          {program === "MLIS" && <div className="bg-white rounded-xl overflow-hidden border border-slate-200 shadow-sm">
-            <div className="flex items-center gap-2 px-4 py-3 border-b border-slate-100">
-              <Layers size={13} style={{color: "#E51C24"}} />
-              <h2 className="text-[11px] font-bold uppercase tracking-widest text-slate-500">
-                <span style={{fontSize:"0.65rem",color:"#999",fontWeight:"normal",marginRight:"4px"}}>③</span>Focus Area
-              </h2>
-            </div>
-            <div className="p-3 flex flex-col gap-2">
-              {MLIS_SPECIALIZATIONS.map(({id, label, desc}) => {
-                const active = mlisSpecialization === id;
-                return <button key={id} type="button" onClick={() => setMlisSpecialization(active ? null : id)}
-                  className="w-full text-left rounded-lg p-3 transition-all border duration-150"
-                  style={{background: active ? "#FFF5F5" : "#FAFAFA", borderColor: active ? "#FECACA" : "#E2E8F0", borderLeft: active ? "3px solid #E51C24" : "1px solid #E2E8F0"}}>
-                  <p className="text-[11px] font-bold leading-tight" style={{color: active ? "#E51C24" : "#1E293B"}}>{label}</p>
-                  <p className="text-[10px] text-slate-400 mt-1 leading-relaxed">{desc}</p>
-                </button>;
-              })}
-            </div>
-          </div>}
 
           {/* MIM-only: BS InfoSci alum waiver profile. */}
           {program === "MIM" && <div className="bg-white rounded-xl overflow-hidden border border-slate-200 shadow-sm">
@@ -2450,7 +2289,7 @@ function App() {
             </div>
           )}
 
-          {(program && (program === "HCIM" || program === "MLIS" || track)) && displayTerms.map(term => {
+          {(program && (program === "HCIM" || track)) && displayTerms.map(term => {
           let termCredits = 0;
           term.slots.forEach(s => {
             if (s.type !== "elective" && s.id) termCredits += CORE_CATALOG_LOOKUP[s.id]?.credits ?? 3;else if (s.type === "elective" && userElectives[s.slot || ""]) {
@@ -2638,7 +2477,7 @@ function App() {
                       tracks); now also available for HCIM. Hidden only for
                       skeleton/no-program states, since addElectiveSlot()
                       itself is a no-op outside MIM/HCIM. */}
-                  {(program === "MIM" || program === "HCIM" || program === "MLIS") && <button onClick={() => addElectiveSlot(term.id)} className="w-full rounded-lg border-2 border-dashed border-slate-200 text-slate-400 hover:border-blue-300 hover:text-blue-500 hover:bg-blue-50/50 transition-all duration-150 flex items-center justify-center gap-1.5 py-2 text-[11px] font-medium" title="Add another elective slot to this term">
+                  {(program === "MIM" || program === "HCIM") && <button onClick={() => addElectiveSlot(term.id)} className="w-full rounded-lg border-2 border-dashed border-slate-200 text-slate-400 hover:border-blue-300 hover:text-blue-500 hover:bg-blue-50/50 transition-all duration-150 flex items-center justify-center gap-1.5 py-2 text-[11px] font-medium" title="Add another elective slot to this term">
                     <Plus size={12} />
                     Add Elective
                   </button>}
