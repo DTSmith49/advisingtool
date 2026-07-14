@@ -72,7 +72,7 @@ def infer_program(c):
     return "MIM"
 
 def main():
-    catalog_path = os.path.join(os.path.dirname(__file__), "course_catalog.json")
+    catalog_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "data", "course_catalog.json"))
     if not os.path.exists(catalog_path):
         sys.exit(f"ERROR: course_catalog.json not found at {catalog_path}")
 
