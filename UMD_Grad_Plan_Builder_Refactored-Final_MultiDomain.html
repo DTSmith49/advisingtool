@@ -3055,7 +3055,10 @@ function HandbookPlaceholderPage() {
             {!error && !loading && filteredResults.map(result => {
               const resultProgram = result?.metadata?.program;
               const category = result?.metadata?.category;
-              const sourceLabel = [resultProgram, category].filter(Boolean).join(" • ");
+              const domain = result?.metadata?.domain;
+              const sourceType = result?.metadata?.source_type || (category === "course" ? "Course Description" : "Handbook");
+              const fitTags = Array.isArray(result?.metadata?.good_fit_for) ? result.metadata.good_fit_for : [];
+              const sourceLabel = [sourceType, resultProgram, domain].filter(Boolean).join(" • ");
               const excerpt = result?.content ? String(result.content).slice(0, 420) : "";
 
               return <article
@@ -3072,22 +3075,42 @@ function HandbookPlaceholderPage() {
                       </h3>
                     </div>
 
-                    {resultProgram && <span className="inline-flex rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700">
-                        {resultProgram}
-                      </span>}
+                    <div className="flex flex-wrap gap-2">
+                      {resultProgram && <span className="inline-flex rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700">
+                          {resultProgram}
+                        </span>}
+                      {domain && <span className="inline-flex rounded-full bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-700">
+                          {domain}
+                        </span>}
+                    </div>
                   </div>
 
                   <p className="mt-3 text-sm leading-6 text-slate-700 whitespace-pre-wrap">
                     {excerpt}
                   </p>
 
+                  {fitTags.length > 0 && <div className="mt-4 flex flex-wrap gap-2">
+                      {fitTags.map(tag => <span
+                          key={tag}
+                          className="inline-flex rounded-full bg-amber-50 px-3 py-1 text-xs font-medium text-amber-800"
+                        >
+                          Good fit for: {tag}
+                        </span>)}
+                    </div>}
+
                   <div className="mt-4 flex flex-wrap items-center justify-between gap-3 text-xs text-slate-500">
-                    <span>Section #{result.id}</span>
+                    <span>{sourceType} · Section #{result.id}</span>
                     <button
                       type="button"
                       className="font-semibold text-slate-700"
                       onClick={async () => {
-                        const citation = [result.heading || "Handbook section", sourceLabel || "Graduate handbook", `Section ${result.id}`].join(" — ");
+                        const citation = [
+                          result.heading || "Handbook section",
+                          sourceType || "Graduate handbook",
+                          resultProgram,
+                          domain,
+                          `Section ${result.id}`
+                        ].filter(Boolean).join(" — ");
                         try {
                           await navigator.clipboard.writeText(citation);
                         } catch (_) {}
