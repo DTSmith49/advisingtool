@@ -1,0 +1,1282 @@
+[
+  {
+    "id": "INFM600",
+    "title": "Information Management Ecosystems",
+    "credits": 3,
+    "domains": [
+      "Custom / Other"
+    ],
+    "term": "Fall",
+    "desc": "Models and methodologies.",
+    "tags": [
+      "information management"
+    ]
+  },
+  {
+    "id": "INFM612",
+    "title": "Management of Information Projects, Programs, and Services",
+    "credits": 3,
+    "domains": [
+      "Custom / Other"
+    ],
+    "term": "Spring",
+    "desc": "Management theories and practices.",
+    "tags": [
+      "management"
+    ]
+  },
+  {
+    "id": "INFM737",
+    "title": "Information Management Capstone Experience",
+    "credits": 3,
+    "domains": [
+      "Custom / Other"
+    ],
+    "term": "Both",
+    "desc": "Culminating MIM capstone.",
+    "tags": [
+      "capstone"
+    ]
+  },
+  {
+    "id": "INST600",
+    "title": "Foundations for Librarians and Information Professionals",
+    "credits": 3,
+    "domains": [
+      "Library, Archives & Culture"
+    ],
+    "term": "Both",
+    "desc": "Foundations for Librarians and Information Professionals.",
+    "tags": []
+  },
+  {
+    "id": "INST604",
+    "title": "Introduction to Archives and Digital Curation",
+    "credits": 3,
+    "domains": [
+      "Library, Archives & Culture"
+    ],
+    "term": "Both",
+    "desc": "Introduction to Archives and Digital Curation.",
+    "tags": []
+  },
+  {
+    "id": "INST607",
+    "title": "Government Information",
+    "credits": 3,
+    "domains": [
+      "Policy, Ethics & Society"
+    ],
+    "term": "Fall",
+    "desc": "Government Information.",
+    "tags": []
+  },
+  {
+    "id": "INST608C",
+    "title": "Special Topics in Information Studies; Using Network Visualization to Explore Library and Archive Collections",
+    "credits": 3,
+    "domains": [
+      "Library, Archives & Culture",
+      "Data, AI & Technology"
+    ],
+    "term": "Fall",
+    "desc": "Special Topics in Information Studies; Using Network Visualization to Explore Library and Archive Collections.",
+    "tags": []
+  },
+  {
+    "id": "INST608D",
+    "title": "Special Topics in Information Studies; Spatial Representation and Analysis for Libraries and ArchivesCollections",
+    "credits": 3,
+    "domains": [
+      "Library, Archives & Culture"
+    ],
+    "term": "Spring",
+    "desc": "Special Topics in Information Studies; Spatial Representation and Analysis for Libraries and ArchivesCollections.",
+    "tags": []
+  },
+  {
+    "id": "INST608E",
+    "title": "Special Topics in Information Studies; Designing for Impact: Community-Centered Projects through MonthlyHeritage and Awareness Calendar",
+    "credits": 3,
+    "domains": [
+      "Library, Archives & Culture",
+      "HCI, Design & Games",
+      "Policy, Ethics & Society"
+    ],
+    "term": "Both",
+    "desc": "Special Topics in Information Studies; Designing for Impact: Community-Centered Projects through MonthlyHeritage and Awareness Calendar.",
+    "tags": []
+  },
+  {
+    "id": "INST608F",
+    "title": "Special Topics in Information Studies; AI and Music: History and Practice",
+    "credits": 3,
+    "domains": [
+      "Library, Archives & Culture",
+      "Data, AI & Technology"
+    ],
+    "term": "Spring",
+    "desc": "Special Topics in Information Studies; AI and Music: History and Practice.",
+    "tags": []
+  },
+  {
+    "id": "INST608G",
+    "title": "Special Topics in Information Studies; Practical Copyright",
+    "credits": 1,
+    "domains": [
+      "Library, Archives & Culture"
+    ],
+    "term": "Spring",
+    "desc": "Special Topics in Information Studies; Practical Copyright.",
+    "tags": []
+  },
+  {
+    "id": "INST608Q",
+    "title": "Special Topics in Information Studies; Consumer Health Informatics",
+    "credits": 3,
+    "domains": [
+      "Library, Archives & Culture",
+      "Data, AI & Technology"
+    ],
+    "term": "Fall",
+    "desc": "Special Topics in Information Studies; Consumer Health Informatics.",
+    "tags": []
+  },
+  {
+    "id": "INST608T",
+    "title": "Special Topics in Information Studies; Trauma-Informed Librarianship",
+    "credits": 3,
+    "domains": [
+      "Library, Archives & Culture"
+    ],
+    "term": "Spring",
+    "desc": "Special Topics in Information Studies; Trauma-Informed Librarianship.",
+    "tags": []
+  },
+  {
+    "id": "INST610",
+    "title": "Information Ethics",
+    "credits": 3,
+    "domains": [
+      "Policy, Ethics & Society"
+    ],
+    "term": "Fall",
+    "desc": "Information Ethics.",
+    "tags": []
+  },
+  {
+    "id": "INST612",
+    "title": "Information Policy",
+    "credits": 3,
+    "domains": [
+      "Policy, Ethics & Society"
+    ],
+    "term": "Spring",
+    "desc": "Information Policy.",
+    "tags": []
+  },
+  {
+    "id": "INST613",
+    "title": "Information and Human Rights",
+    "credits": 3,
+    "domains": [
+      "Policy, Ethics & Society"
+    ],
+    "term": "Fall",
+    "desc": "Information and Human Rights.",
+    "tags": []
+  },
+  {
+    "id": "INST614",
+    "title": "Literacy and Inclusion",
+    "credits": 3,
+    "domains": [
+      "Policy, Ethics & Society"
+    ],
+    "term": "Spring",
+    "desc": "Literacy and Inclusion.",
+    "tags": []
+  },
+  {
+    "id": "INST615",
+    "title": "Information Professionals and the Law",
+    "credits": 3,
+    "domains": [
+      "Library, Archives & Culture",
+      "Policy, Ethics & Society"
+    ],
+    "term": "Fall",
+    "desc": "Information Professionals and the Law.",
+    "tags": []
+  },
+  {
+    "id": "INST616",
+    "title": "Open Source Intelligence",
+    "credits": 3,
+    "domains": [
+      "Policy, Ethics & Society"
+    ],
+    "term": "Spring",
+    "desc": "Open Source Intelligence.",
+    "tags": []
+  },
+  {
+    "id": "INST620",
+    "title": "Diverse Populations, Inclusion, and Information",
+    "credits": 3,
+    "domains": [
+      "Policy, Ethics & Society"
+    ],
+    "term": "Fall",
+    "desc": "Diverse Populations, Inclusion, and Information.",
+    "tags": []
+  },
+  {
+    "id": "INST622",
+    "title": "Information and Universal Usability",
+    "credits": 3,
+    "domains": [
+      "HCI, Design & Games"
+    ],
+    "term": "Spring",
+    "desc": "Information and Universal Usability.",
+    "tags": []
+  },
+  {
+    "id": "INST623A",
+    "title": "I Adoption Clinic: Values-Centered AI for Community Organizations",
+    "credits": 3,
+    "domains": [
+      "Data, AI & Technology"
+    ],
+    "term": "Both",
+    "desc": "I Adoption Clinic: Values-Centered AI for Community Organizations.",
+    "tags": []
+  },
+  {
+    "id": "INST624",
+    "title": "Modern Techniques for Software Development",
+    "credits": 3,
+    "domains": [
+      "Data, AI & Technology",
+      "Policy, Ethics & Society"
+    ],
+    "term": "Fall",
+    "desc": "Modern Techniques for Software Development.",
+    "tags": []
+  },
+  {
+    "id": "INST627",
+    "title": "Foundations of Data Science",
+    "credits": 3,
+    "domains": [
+      "Data, AI & Technology"
+    ],
+    "term": "Fall",
+    "desc": "Foundations of Data Science.",
+    "tags": []
+  },
+  {
+    "id": "INST630",
+    "title": "Programming Human-Centered Interfaces",
+    "credits": 3,
+    "domains": [
+      "Data, AI & Technology",
+      "HCI, Design & Games"
+    ],
+    "term": "Both",
+    "desc": "Programming Human-Centered Interfaces.",
+    "tags": []
+  },
+  {
+    "id": "INST631",
+    "title": "Fundamentals of Human-Computer Interaction",
+    "credits": 3,
+    "domains": [
+      "HCI, Design & Games"
+    ],
+    "term": "Fall",
+    "desc": "Fundamentals of Human-Computer Interaction.",
+    "tags": []
+  },
+  {
+    "id": "INST639G",
+    "title": "Special Topics in HCI; UX Strategy",
+    "credits": 1,
+    "domains": [
+      "HCI, Design & Games"
+    ],
+    "term": "Spring",
+    "desc": "Special Topics in HCI; UX Strategy.",
+    "tags": []
+  },
+  {
+    "id": "INST639R",
+    "title": "Special Topics in HCI; Make it Smart: Human-Centered Design for AI",
+    "credits": 3,
+    "domains": [
+      "Data, AI & Technology",
+      "HCI, Design & Games"
+    ],
+    "term": "Spring",
+    "desc": "Special Topics in HCI; Make it Smart: Human-Centered Design for AI.",
+    "tags": []
+  },
+  {
+    "id": "INST639T",
+    "title": "Special Topics in HCI; Social and Psychological Impacts of AI",
+    "credits": 3,
+    "domains": [
+      "Data, AI & Technology",
+      "Policy, Ethics & Society",
+      "HCI, Design & Games"
+    ],
+    "term": "Spring",
+    "desc": "Special Topics in HCI; Social and Psychological Impacts of AI.",
+    "tags": []
+  },
+  {
+    "id": "INST639U",
+    "title": "Special Topics in HCI; Succeeding on Teams and Projects as a UX Professional",
+    "credits": 1,
+    "domains": [
+      "HCI, Design & Games"
+    ],
+    "term": "Fall",
+    "desc": "Special Topics in HCI; Succeeding on Teams and Projects as a UX Professional.",
+    "tags": []
+  },
+  {
+    "id": "INST641",
+    "title": "Policy and Ethics in Digital Curation",
+    "credits": 3,
+    "domains": [
+      "Library, Archives & Culture",
+      "Policy, Ethics & Society"
+    ],
+    "term": "Spring",
+    "desc": "Policy and Ethics in Digital Curation.",
+    "tags": []
+  },
+  {
+    "id": "INST643",
+    "title": "Curation in Cultural Institutions",
+    "credits": 3,
+    "domains": [
+      "Library, Archives & Culture"
+    ],
+    "term": "Fall",
+    "desc": "Curation in Cultural Institutions.",
+    "tags": []
+  },
+  {
+    "id": "INST646",
+    "title": "Principles of Records and Information Management",
+    "credits": 3,
+    "domains": [
+      "Library, Archives & Culture"
+    ],
+    "term": "Spring",
+    "desc": "Principles of Records and Information Management.",
+    "tags": []
+  },
+  {
+    "id": "INST650",
+    "title": "Facilitating Youth Learning in Formal and Informal Environments",
+    "credits": 3,
+    "domains": [
+      "Policy, Ethics & Society"
+    ],
+    "term": "Fall",
+    "desc": "Facilitating Youth Learning in Formal and Informal Environments.",
+    "tags": []
+  },
+  {
+    "id": "INST651",
+    "title": "Promoting Rich Learning with Technology",
+    "credits": 3,
+    "domains": [
+      "Data, AI & Technology",
+      "Policy, Ethics & Society"
+    ],
+    "term": "Fall",
+    "desc": "Promoting Rich Learning with Technology.",
+    "tags": []
+  },
+  {
+    "id": "INST652",
+    "title": "Design Thinking and Youth",
+    "credits": 3,
+    "domains": [
+      "HCI, Design & Games",
+      "Policy, Ethics & Society"
+    ],
+    "term": "Spring",
+    "desc": "Design Thinking and Youth.",
+    "tags": []
+  },
+  {
+    "id": "INST653",
+    "title": "Introduction to Museum Scholarship",
+    "credits": 3,
+    "domains": [
+      "Library, Archives & Culture"
+    ],
+    "term": "Both",
+    "desc": "Introduction to Museum Scholarship.",
+    "tags": []
+  },
+  {
+    "id": "INST662",
+    "title": "Networked Infrastructure",
+    "credits": 3,
+    "domains": [
+      "Data, AI & Technology"
+    ],
+    "term": "Spring",
+    "desc": "Networked Infrastructure.",
+    "tags": []
+  },
+  {
+    "id": "INST663",
+    "title": "Cyberdefense and Ethical Hacking",
+    "credits": 3,
+    "domains": [
+      "Data, AI & Technology"
+    ],
+    "term": "Spring",
+    "desc": "Cyberdefense and Ethical Hacking.",
+    "tags": []
+  },
+  {
+    "id": "INST664",
+    "title": "Transforming Unstructured Content with AI",
+    "credits": 3,
+    "domains": [
+      "Data, AI & Technology"
+    ],
+    "term": "Spring",
+    "desc": "Transforming Unstructured Content with AI.",
+    "tags": []
+  },
+  {
+    "id": "INST680",
+    "title": "Health Informatics",
+    "credits": 3,
+    "domains": [
+      "Data, AI & Technology"
+    ],
+    "term": "Spring",
+    "desc": "Health Informatics.",
+    "tags": []
+  },
+  {
+    "id": "INST682",
+    "title": "Personal Health Informatics & Visualization",
+    "credits": 3,
+    "domains": [
+      "Data, AI & Technology"
+    ],
+    "term": "Spring",
+    "desc": "Personal Health Informatics & Visualization.",
+    "tags": []
+  },
+  {
+    "id": "INST700",
+    "title": "Information Architecture",
+    "credits": 3,
+    "domains": [
+      "Policy, Ethics & Society"
+    ],
+    "term": "Fall",
+    "desc": "Information Architecture.",
+    "tags": []
+  },
+  {
+    "id": "INST702",
+    "title": "Advanced Usability Testing",
+    "credits": 3,
+    "domains": [
+      "HCI, Design & Games"
+    ],
+    "term": "Spring",
+    "desc": "Advanced Usability Testing.",
+    "tags": []
+  },
+  {
+    "id": "INST703",
+    "title": "Visual Design Studio",
+    "credits": 3,
+    "domains": [
+      "HCI, Design & Games",
+      "Policy, Ethics & Society"
+    ],
+    "term": "Spring",
+    "desc": "Visual Design Studio.",
+    "tags": []
+  },
+  {
+    "id": "INST704",
+    "title": "Inclusive Design in HCI",
+    "credits": 3,
+    "domains": [
+      "HCI, Design & Games"
+    ],
+    "term": "Fall",
+    "desc": "Inclusive Design in HCI.",
+    "tags": []
+  },
+  {
+    "id": "INST705",
+    "title": "Game Design Studio",
+    "credits": 3,
+    "domains": [
+      "HCI, Design & Games"
+    ],
+    "term": "Spring",
+    "desc": "Game Design Studio.",
+    "tags": []
+  },
+  {
+    "id": "INST710",
+    "title": "User Experience Research Methods",
+    "credits": 3,
+    "domains": [
+      "Research & Capstone",
+      "HCI, Design & Games"
+    ],
+    "term": "Both",
+    "desc": "User Experience Research Methods.",
+    "tags": []
+  },
+  {
+    "id": "INST711",
+    "title": "Interaction Design Studio",
+    "credits": 3,
+    "domains": [
+      "HCI, Design & Games"
+    ],
+    "term": "Both",
+    "desc": "Interaction Design Studio.",
+    "tags": []
+  },
+  {
+    "id": "INST713",
+    "title": "Futures of Work",
+    "credits": 3,
+    "domains": [
+      "Policy, Ethics & Society"
+    ],
+    "term": "Fall",
+    "desc": "Futures of Work.",
+    "tags": []
+  },
+  {
+    "id": "INST725",
+    "title": "Legal Research for Information Professionals",
+    "credits": 3,
+    "domains": [
+      "Library, Archives & Culture",
+      "Research & Capstone"
+    ],
+    "term": "Spring",
+    "desc": "Legal Research for Information Professionals.",
+    "tags": []
+  },
+  {
+    "id": "INST726",
+    "title": "Information Governance",
+    "credits": 3,
+    "domains": [
+      "Policy, Ethics & Society"
+    ],
+    "term": "Spring",
+    "desc": "Information Governance.",
+    "tags": []
+  },
+  {
+    "id": "INST728A",
+    "title": "Special Topics in Information Studies; Digital Accessibility Law and Management",
+    "credits": 3,
+    "domains": [
+      "Library, Archives & Culture",
+      "Policy, Ethics & Society"
+    ],
+    "term": "Fall",
+    "desc": "Special Topics in Information Studies; Digital Accessibility Law and Management.",
+    "tags": []
+  },
+  {
+    "id": "INST728E",
+    "title": "Special Topics in Information Studies; Sustainability in Cultural Heritage and Information Science",
+    "credits": 3,
+    "domains": [
+      "Library, Archives & Culture",
+      "Data, AI & Technology"
+    ],
+    "term": "Spring",
+    "desc": "Special Topics in Information Studies; Sustainability in Cultural Heritage and Information Science.",
+    "tags": []
+  },
+  {
+    "id": "INST728F",
+    "title": "Special Topics in Information Studies; Generative AI in UX: Transforming UX Practice",
+    "credits": 3,
+    "domains": [
+      "Data, AI & Technology",
+      "HCI, Design & Games"
+    ],
+    "term": "Fall",
+    "desc": "Special Topics in Information Studies; Generative AI in UX: Transforming UX Practice.",
+    "tags": []
+  },
+  {
+    "id": "INST728N",
+    "title": "Special Topics in Information Studies; Scholarly Communications Librarianship",
+    "credits": 3,
+    "domains": [
+      "Library, Archives & Culture"
+    ],
+    "term": "Spring",
+    "desc": "Special Topics in Information Studies; Scholarly Communications Librarianship.",
+    "tags": []
+  },
+  {
+    "id": "INST728X",
+    "title": "Special Topics in Information Studies; Designing Technology with Older People",
+    "credits": 3,
+    "domains": [
+      "Library, Archives & Culture",
+      "Data, AI & Technology",
+      "HCI, Design & Games"
+    ],
+    "term": "Spring",
+    "desc": "Special Topics in Information Studies; Designing Technology with Older People.",
+    "tags": []
+  },
+  {
+    "id": "INST730",
+    "title": "Games as Emergent Experiences",
+    "credits": 3,
+    "domains": [
+      "HCI, Design & Games"
+    ],
+    "term": "Spring",
+    "desc": "Games as Emergent Experiences.",
+    "tags": []
+  },
+  {
+    "id": "INST731",
+    "title": "Advanced Game, Entertainment, and Media Analytics",
+    "credits": 3,
+    "domains": [
+      "Data, AI & Technology",
+      "HCI, Design & Games"
+    ],
+    "term": "Spring",
+    "desc": "Advanced Game, Entertainment, and Media Analytics.",
+    "tags": []
+  },
+  {
+    "id": "INST732",
+    "title": "Entertainment Theory",
+    "credits": 3,
+    "domains": [
+      "Data, AI & Technology",
+      "HCI, Design & Games"
+    ],
+    "term": "Spring",
+    "desc": "Entertainment Theory.",
+    "tags": []
+  },
+  {
+    "id": "INST733",
+    "title": "Database Design",
+    "credits": 3,
+    "domains": [
+      "Data, AI & Technology",
+      "HCI, Design & Games"
+    ],
+    "term": "Spring",
+    "desc": "Database Design.",
+    "tags": []
+  },
+  {
+    "id": "INST735",
+    "title": "Natural Language Processing",
+    "credits": 3,
+    "domains": [
+      "Data, AI & Technology"
+    ],
+    "term": "Fall",
+    "desc": "Natural Language Processing.",
+    "tags": []
+  },
+  {
+    "id": "INST737",
+    "title": "Data Science Techniques",
+    "credits": 3,
+    "domains": [
+      "Data, AI & Technology"
+    ],
+    "term": "Spring",
+    "desc": "Data Science Techniques.",
+    "tags": []
+  },
+  {
+    "id": "INST742",
+    "title": "Implementing Digital Curation",
+    "credits": 3,
+    "domains": [
+      "Library, Archives & Culture"
+    ],
+    "term": "Spring",
+    "desc": "Implementing Digital Curation.",
+    "tags": []
+  },
+  {
+    "id": "INST750",
+    "title": "Advanced Data Science",
+    "credits": 3,
+    "domains": [
+      "Data, AI & Technology"
+    ],
+    "term": "Spring",
+    "desc": "Advanced Data Science.",
+    "tags": []
+  },
+  {
+    "id": "INST752",
+    "title": "Location Intelligence",
+    "credits": 3,
+    "domains": [
+      "Policy, Ethics & Society"
+    ],
+    "term": "Fall",
+    "desc": "Location Intelligence.",
+    "tags": []
+  },
+  {
+    "id": "INST754",
+    "title": "Data Integration and Preparation for Analytics & Visualization",
+    "credits": 3,
+    "domains": [
+      "Data, AI & Technology"
+    ],
+    "term": "Spring",
+    "desc": "Data Integration and Preparation for Analytics & Visualization.",
+    "tags": []
+  },
+  {
+    "id": "INST756",
+    "title": "Information Risk Management",
+    "credits": 3,
+    "domains": [
+      "Data, AI & Technology"
+    ],
+    "term": "Fall",
+    "desc": "Information Risk Management.",
+    "tags": []
+  },
+  {
+    "id": "INST760",
+    "title": "Data Visualization",
+    "credits": 3,
+    "domains": [
+      "Data, AI & Technology"
+    ],
+    "term": "Fall",
+    "desc": "Data Visualization.",
+    "tags": []
+  },
+  {
+    "id": "INST762",
+    "title": "Visual Analytics",
+    "credits": 3,
+    "domains": [
+      "Data, AI & Technology"
+    ],
+    "term": "Both",
+    "desc": "Visual Analytics.",
+    "tags": []
+  },
+  {
+    "id": "INST767",
+    "title": "Big Data Infrastructure",
+    "credits": 3,
+    "domains": [
+      "Data, AI & Technology"
+    ],
+    "term": "Both",
+    "desc": "Big Data Infrastructure.",
+    "tags": []
+  },
+  {
+    "id": "INST771",
+    "title": "Foundations of Cybersecurity",
+    "credits": 3,
+    "domains": [
+      "Data, AI & Technology"
+    ],
+    "term": "Fall",
+    "desc": "Foundations of Cybersecurity.",
+    "tags": []
+  },
+  {
+    "id": "INST774",
+    "title": "Advanced Human-Centered Cybersecurity",
+    "credits": 3,
+    "domains": [
+      "Data, AI & Technology",
+      "HCI, Design & Games"
+    ],
+    "term": "Fall",
+    "desc": "Advanced Human-Centered Cybersecurity.",
+    "tags": []
+  },
+  {
+    "id": "INST775",
+    "title": "HCIM CAPSTONE PREP",
+    "credits": 3,
+    "domains": [
+      "Research & Capstone"
+    ],
+    "term": "Fall",
+    "desc": "HCIM CAPSTONE PREP.",
+    "tags": []
+  },
+  {
+    "id": "INST776",
+    "title": "HCIM CAPSTONE PROJECT",
+    "credits": 3,
+    "domains": [
+      "Research & Capstone"
+    ],
+    "term": "Spring",
+    "desc": "HCIM CAPSTONE PROJECT.",
+    "tags": []
+  },
+  {
+    "id": "INST779",
+    "title": "Readings Seminar; Readings Seminar",
+    "credits": 1,
+    "domains": [
+      "Research & Capstone"
+    ],
+    "term": "Fall",
+    "desc": "Readings Seminar; Readings Seminar.",
+    "tags": []
+  },
+  {
+    "id": "INST782",
+    "title": "Arrangement, Description, and Access for Archives",
+    "credits": 3,
+    "domains": [
+      "Library, Archives & Culture"
+    ],
+    "term": "Fall",
+    "desc": "Arrangement, Description, and Access for Archives.",
+    "tags": []
+  },
+  {
+    "id": "INST784",
+    "title": "Digital Preservation",
+    "credits": 3,
+    "domains": [
+      "Library, Archives & Culture"
+    ],
+    "term": "Fall",
+    "desc": "Digital Preservation.",
+    "tags": []
+  },
+  {
+    "id": "INST785",
+    "title": "Documentation, Collection, and Appraisal of Records",
+    "credits": 3,
+    "domains": [
+      "Library, Archives & Culture",
+      "Data, AI & Technology"
+    ],
+    "term": "Spring",
+    "desc": "Documentation, Collection, and Appraisal of Records.",
+    "tags": []
+  },
+  {
+    "id": "INST786",
+    "title": "Museum Research Seminar",
+    "credits": 3,
+    "domains": [
+      "Library, Archives & Culture",
+      "Research & Capstone"
+    ],
+    "term": "Spring",
+    "desc": "Museum Research Seminar.",
+    "tags": []
+  },
+  {
+    "id": "INST787",
+    "title": "Museum Scholarship Practicum",
+    "credits": 3,
+    "domains": [
+      "Library, Archives & Culture",
+      "Research & Capstone"
+    ],
+    "term": "Both",
+    "desc": "Museum Scholarship Practicum.",
+    "tags": []
+  },
+  {
+    "id": "INST798",
+    "title": "Seminar in Research Methods and Data Analysis",
+    "credits": 3,
+    "domains": [
+      "Data, AI & Technology",
+      "Research & Capstone"
+    ],
+    "term": "Both",
+    "desc": "Seminar in Research Methods and Data Analysis.",
+    "tags": []
+  },
+  {
+    "id": "INST799",
+    "title": "Master's Thesis Research",
+    "credits": 3,
+    "domains": [
+      "Research & Capstone"
+    ],
+    "term": "Both",
+    "desc": "Master's Thesis Research \u2014 HCIM thesis pathway (6 credits total across two terms).",
+    "tags": []
+  },
+  {
+    "id": "INST800",
+    "title": "Pre-Candidacy Proseminar",
+    "credits": 1,
+    "domains": [
+      "Research & Capstone"
+    ],
+    "term": "Fall",
+    "desc": "Pre-Candidacy Proseminar.",
+    "tags": []
+  },
+  {
+    "id": "INST801",
+    "title": "Theoretical Foundations in Information Studies I",
+    "credits": 3,
+    "domains": [
+      "Library, Archives & Culture"
+    ],
+    "term": "Fall",
+    "desc": "Theoretical Foundations in Information Studies I.",
+    "tags": []
+  },
+  {
+    "id": "INST802",
+    "title": "Pragmatic and Methodological Foundations for Information Studies",
+    "credits": 3,
+    "domains": [
+      "Library, Archives & Culture"
+    ],
+    "term": "Spring",
+    "desc": "Pragmatic and Methodological Foundations for Information Studies.",
+    "tags": []
+  },
+  {
+    "id": "INST808",
+    "title": "Seminar in Research Methods and Data Analysis",
+    "credits": 3,
+    "domains": [
+      "Data, AI & Technology",
+      "Research & Capstone"
+    ],
+    "term": "Both",
+    "desc": "Seminar in Research Methods and Data Analysis.",
+    "tags": []
+  },
+  {
+    "id": "INST820",
+    "title": "Literacies for Leadership",
+    "credits": 3,
+    "domains": [
+      "Policy, Ethics & Society"
+    ],
+    "term": "Fall",
+    "desc": "Literacies for Leadership.",
+    "tags": []
+  },
+  {
+    "id": "INST821",
+    "title": "Practice-Based Research",
+    "credits": 3,
+    "domains": [
+      "Research & Capstone"
+    ],
+    "term": "Fall",
+    "desc": "Practice-Based Research.",
+    "tags": []
+  },
+  {
+    "id": "INST828",
+    "title": "Readings Seminar",
+    "credits": 1,
+    "domains": [
+      "Research & Capstone"
+    ],
+    "term": "Spring",
+    "desc": "Readings Seminar.",
+    "tags": []
+  },
+  {
+    "id": "INST832",
+    "title": "Information and Human Rights",
+    "credits": 3,
+    "domains": [
+      "Policy, Ethics & Society"
+    ],
+    "term": "Fall",
+    "desc": "Information and Human Rights.",
+    "tags": []
+  },
+  {
+    "id": "INST878",
+    "title": "Special Topics in Information Studies",
+    "credits": 3,
+    "domains": [
+      "Library, Archives & Culture"
+    ],
+    "term": "Both",
+    "desc": "Special Topics in Information Studies.",
+    "tags": []
+  },
+  {
+    "id": "INST878F",
+    "title": "Special Topics in Information Studies; Literacies for Leadership",
+    "credits": 3,
+    "domains": [
+      "Library, Archives & Culture"
+    ],
+    "term": "Spring",
+    "desc": "Special Topics in Information Studies; Literacies for Leadership.",
+    "tags": []
+  },
+  {
+    "id": "INST878V",
+    "title": "Special Topics in Information Studies; Practice-Based Research",
+    "credits": 3,
+    "domains": [
+      "Library, Archives & Culture",
+      "Research & Capstone"
+    ],
+    "term": "Spring",
+    "desc": "Special Topics in Information Studies; Practice-Based Research.",
+    "tags": []
+  },
+  {
+    "id": "INST878Z",
+    "title": "Special Topics in Information Studies; The Public Intellectual",
+    "credits": 3,
+    "domains": [
+      "Library, Archives & Culture"
+    ],
+    "term": "Spring",
+    "desc": "Special Topics in Information Studies; The Public Intellectual.",
+    "tags": []
+  },
+  {
+    "id": "LBSC602",
+    "title": "Serving Information Needs",
+    "credits": 3,
+    "domains": [
+      "Archives & Museum"
+    ],
+    "term": "Fall",
+    "desc": "Reference services.",
+    "tags": [
+      "reference"
+    ]
+  },
+  {
+    "id": "LBSC631",
+    "title": "Achieving Organizational Excellence",
+    "credits": 3,
+    "domains": [
+      "Custom / Other"
+    ],
+    "term": "Fall",
+    "desc": "Leadership and management.",
+    "tags": [
+      "leadership"
+    ]
+  },
+  {
+    "id": "LBSC644",
+    "title": "Collection Development",
+    "credits": 3,
+    "domains": [
+      "Archives & Museum"
+    ],
+    "term": "Fall",
+    "desc": "Development and management of library collections.",
+    "tags": [
+      "collections"
+    ]
+  },
+  {
+    "id": "LBSC645",
+    "title": "Literature and Materials for Children",
+    "credits": 3,
+    "domains": [
+      "Archives & Museum"
+    ],
+    "term": "Fall",
+    "desc": "Literature for children and youth.",
+    "tags": [
+      "children"
+    ]
+  },
+  {
+    "id": "LBSC671",
+    "title": "The Lifecycle of Information",
+    "credits": 3,
+    "domains": [
+      "Archives & Museum"
+    ],
+    "term": "Fall",
+    "desc": "Methods for creating, acquiring, organizing information.",
+    "tags": [
+      "lifecycle"
+    ]
+  },
+  {
+    "id": "LBSC702",
+    "title": "User Instruction",
+    "credits": 3,
+    "domains": [
+      "Archives & Museum"
+    ],
+    "term": "Fall",
+    "desc": "Rationale, content, and processes of user instruction.",
+    "tags": [
+      "instruction"
+    ]
+  },
+  {
+    "id": "LBSC707",
+    "title": "Field Study in Information Service",
+    "credits": 3,
+    "domains": [
+      "Archives & Museum"
+    ],
+    "term": "Fall",
+    "desc": "Supervised internship experience.",
+    "tags": [
+      "internship"
+    ]
+  },
+  {
+    "id": "LBSC708Y",
+    "title": "Special Topics in LIS: Community Archives",
+    "credits": 3,
+    "domains": [
+      "Archives & Museum"
+    ],
+    "term": "Fall",
+    "desc": "Exploration of community archives.",
+    "tags": [
+      "archives"
+    ],
+    "maxRepeats": 3
+  },
+  {
+    "id": "LBSC723",
+    "title": "Advocacy and Support for Information Services",
+    "credits": 3,
+    "domains": [
+      "Archives & Museum"
+    ],
+    "term": "Fall",
+    "desc": "Role of government, foundations.",
+    "tags": [
+      "advocacy"
+    ]
+  },
+  {
+    "id": "LBSC724",
+    "title": "Public Library Seminar",
+    "credits": 3,
+    "domains": [
+      "Archives & Museum"
+    ],
+    "term": "Fall",
+    "desc": "Organization, support of public libraries.",
+    "tags": [
+      "public libraries"
+    ]
+  },
+  {
+    "id": "LBSC731",
+    "title": "Special Collections",
+    "credits": 3,
+    "domains": [
+      "Archives & Museum"
+    ],
+    "term": "Fall",
+    "desc": "Management of special collections.",
+    "tags": [
+      "special collections"
+    ]
+  },
+  {
+    "id": "LBSC742",
+    "title": "Collaborative Instructional Design and Evaluation",
+    "credits": 3,
+    "domains": [
+      "Archives & Museum"
+    ],
+    "term": "Fall",
+    "desc": "School librarians' collaborative role.",
+    "tags": [
+      "instructional design"
+    ]
+  },
+  {
+    "id": "LBSC749",
+    "title": "Internship in School Libraries",
+    "credits": 3,
+    "domains": [
+      "Archives & Museum"
+    ],
+    "term": "Fall",
+    "desc": "Supervised internship experience.",
+    "tags": [
+      "internship"
+    ],
+    "maxRepeats": 2
+  },
+  {
+    "id": "LBSC751",
+    "title": "Research and Teaching Fellowship II",
+    "credits": 1,
+    "domains": [
+      "Archives & Museum"
+    ],
+    "term": "Fall",
+    "desc": "Teacher training program.",
+    "tags": [
+      "fellowship"
+    ]
+  },
+  {
+    "id": "LBSC770",
+    "title": "Metadata and Tools for Information Professionals",
+    "credits": 3,
+    "domains": [
+      "Archives & Museum"
+    ],
+    "term": "Fall",
+    "desc": "Information representation.",
+    "tags": [
+      "metadata"
+    ]
+  }
+]
