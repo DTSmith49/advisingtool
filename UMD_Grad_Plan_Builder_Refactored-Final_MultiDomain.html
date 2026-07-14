@@ -1823,6 +1823,7 @@ function App() {
           {[
             { id: "planner", label: "Plan Builder", Icon: GraduationCap },
             { id: "dates",   label: "Important Dates", Icon: Calendar },
+            { id: "handbook", label: "Handbook Search", Icon: Search },
           ].map(({ id, label, Icon }) => (
             <button
               key={id}
@@ -2527,6 +2528,7 @@ function App() {
 </main>
       </div>}
       {activePage === "dates" && <ImportantDatesPage />}
+      {activePage === "handbook" && <HandbookPlaceholderPage />}
 
       {/* DRAWER COMPONENT */}
       {drawerOpen && <div className="fixed inset-0 z-50 flex justify-end" style={{
@@ -2848,6 +2850,258 @@ function renderWithLinks(text) {
     parts.push(<span key="tail">{text.slice(lastIndex)}</span>);
   }
   return parts;
+}
+
+function HandbookPlaceholderPage() {
+  const SUPABASE_URL = "https://ftjmflybfyhkkdirsaxx.supabase.co";
+  const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ0am1mbHliZnloa2tkaXJzYXh4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM4ODYzODIsImV4cCI6MjA5OTQ2MjM4Mn0.6VLRUG95rXA2WU88kUQdTXmyT8aXTCZQMNV-b5fLCbk";
+  const ADVISING_INDEX_ID = "0cefd326-971c-4cd5-ad4e-2ffe0e39aee0";
+
+  const [query, setQuery] = React.useState("");
+  const [programFilter, setProgramFilter] = React.useState("All");
+  const [results, setResults] = React.useState([]);
+  const [loading, setLoading] = React.useState(false);
+  const [error, setError] = React.useState("");
+  const [hasSearched, setHasSearched] = React.useState(false);
+
+  const supabaseRef = React.useRef(null);
+
+  React.useEffect(() => {
+    let cancelled = false;
+
+    async function loadClient() {
+      try {
+        const { createClient } = await import("https://esm.sh/@supabase/supabase-js@2");
+        if (!cancelled) {
+          supabaseRef.current = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        }
+      } catch (err) {
+        if (!cancelled) {
+          setError("Unable to load handbook search client.");
+        }
+      }
+    }
+
+    loadClient();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const runSearch = React.useCallback(async (queryOverride = query) => {
+    const trimmedQuery = (queryOverride || "").trim();
+
+    if (!trimmedQuery) {
+      setResults([]);
+      setError("");
+      setHasSearched(false);
+      return;
+    }
+
+    if (!supabaseRef.current) {
+      setError("Search client is still loading. Please try again.");
+      setHasSearched(true);
+      return;
+    }
+
+    setLoading(true);
+    setError("");
+    setHasSearched(true);
+
+    const { data, error: rpcError } = await supabaseRef.current.rpc("search_knowledge_sections_filtered", {
+      p_index_id: ADVISING_INDEX_ID,
+      p_query: trimmedQuery,
+      p_limit: 8,
+      p_program: programFilter === "All" ? null : programFilter
+    });
+
+    if (rpcError) {
+      setError(rpcError.message || "Search failed.");
+      setResults([]);
+      setLoading(false);
+      return;
+    }
+
+    setResults(data || []);
+    setLoading(false);
+  }, [query]);
+
+  const filteredResults = results.filter(result => {
+    if (programFilter === "All") return true;
+    return result?.metadata?.program === programFilter;
+  });
+
+  return <div className="min-h-screen px-6 pb-10">
+      <div className="max-w-6xl mx-auto mt-6">
+        <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+          <div className="px-6 py-6 border-b border-slate-200 bg-slate-50/70">
+            <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+              <div>
+                <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500 mb-2">
+                  Graduate handbook search
+                </p>
+                <h2 className="text-[18px] font-bold text-slate-900">
+                  MIM / HCIM handbook search
+                </h2>
+                <p className="text-sm text-slate-600 mt-2 max-w-2xl">
+                  Search advising guidance, degree requirements, policies, and planning information directly inside the planner.
+                </p>
+              </div>
+
+              <div className="rounded-full bg-emerald-50 px-3 py-1 text-[11px] font-semibold text-emerald-700 border border-emerald-200">
+                Live search
+              </div>
+            </div>
+
+            <form
+              className="mt-5 flex flex-col gap-3 md:flex-row"
+              onSubmit={e => {
+                e.preventDefault();
+                runSearch();
+              }}
+            >
+              <div className="flex-1 relative">
+                <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                <input
+                  type="search"
+                  value={query}
+                  onChange={e => setQuery(e.target.value)}
+                  placeholder="Search handbook topics, policies, or planning guidance"
+                  className="w-full rounded-xl border border-slate-300 bg-white pl-10 pr-4 py-3 text-sm text-slate-900 outline-none focus:border-red-500"
+                />
+              </div>
+
+              <button
+                type="submit"
+                disabled={loading || !query.trim()}
+                className="rounded-xl px-4 py-3 text-sm font-semibold text-white disabled:opacity-50"
+                style={{ backgroundColor: "#E51C24" }}
+              >
+                {loading ? "Searching..." : "Search"}
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setQuery("");
+                  setResults([]);
+                  setError("");
+                  setHasSearched(false);
+                }}
+                className="rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm font-semibold text-slate-700"
+              >
+                Clear
+              </button>
+            </form>
+
+            <div className="mt-4 flex flex-wrap items-center gap-2">
+              <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">
+                Program
+              </span>
+              {["All", "MIM", "HCIM"].map(option => <button
+                  key={option}
+                  type="button"
+                  onClick={() => setProgramFilter(option)}
+                  className="rounded-full border px-3 py-1.5 text-xs font-semibold transition"
+                  style={{
+                    borderColor: programFilter === option ? "#E51C24" : "#CBD5E1",
+                    background: programFilter === option ? "#FEF2F2" : "#FFFFFF",
+                    color: programFilter === option ? "#B91C1C" : "#475569"
+                  }}
+                >
+                  {option}
+                </button>)}
+            </div>
+          </div>
+
+          <div className="px-6 py-4 border-b border-slate-100 bg-white">
+            <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between text-sm">
+              <p className="text-slate-600">
+                {filteredResults.length} result{filteredResults.length === 1 ? "" : "s"} shown
+                {query.trim() ? <> for <span className="font-semibold text-slate-900">"{query.trim()}"</span></> : ""}
+              </p>
+              <p className="text-xs text-slate-500">
+                Powered by PostgreSQL handbook search
+              </p>
+            </div>
+          </div>
+
+          <div className="p-6 space-y-4">
+            {error && <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+                {error}
+              </div>}
+
+            {!error && loading && <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-8 text-center">
+                <p className="text-sm font-semibold text-slate-800 mb-1">Searching handbook sections...</p>
+                <p className="text-sm text-slate-600">
+                  Looking across indexed MIM and HCIM guidance.
+                </p>
+              </div>}
+
+            {!error && !loading && hasSearched && filteredResults.length === 0 && <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-8 text-center">
+                <p className="text-sm font-semibold text-slate-800 mb-1">No matching handbook sections</p>
+                <p className="text-sm text-slate-600">
+                  Try a broader search term or switch the program filter.
+                </p>
+              </div>}
+
+            {!hasSearched && !loading && !error && <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-8 text-center">
+                <p className="text-sm font-semibold text-slate-800 mb-1">Search the handbook</p>
+                <p className="text-sm text-slate-600">
+                  Try queries like <span className="font-medium">capstone</span>, <span className="font-medium">requirements</span>, or <span className="font-medium">academic standing</span>.
+                </p>
+              </div>}
+
+            {!error && !loading && filteredResults.map(result => {
+              const resultProgram = result?.metadata?.program;
+              const category = result?.metadata?.category;
+              const sourceLabel = [resultProgram, category].filter(Boolean).join(" • ");
+              const excerpt = result?.content ? String(result.content).slice(0, 420) : "";
+
+              return <article
+                  key={result.id}
+                  className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"
+                >
+                  <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+                    <div>
+                      <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500 mb-2">
+                        {sourceLabel || "Handbook"}
+                      </p>
+                      <h3 className="text-base font-semibold text-slate-900">
+                        {result.heading || "Handbook section"}
+                      </h3>
+                    </div>
+
+                    {resultProgram && <span className="inline-flex rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700">
+                        {resultProgram}
+                      </span>}
+                  </div>
+
+                  <p className="mt-3 text-sm leading-6 text-slate-700 whitespace-pre-wrap">
+                    {excerpt}
+                  </p>
+
+                  <div className="mt-4 flex flex-wrap items-center justify-between gap-3 text-xs text-slate-500">
+                    <span>Section #{result.id}</span>
+                    <button
+                      type="button"
+                      className="font-semibold text-slate-700"
+                      onClick={async () => {
+                        const citation = [result.heading || "Handbook section", sourceLabel || "Graduate handbook", `Section ${result.id}`].join(" — ");
+                        try {
+                          await navigator.clipboard.writeText(citation);
+                        } catch (_) {}
+                      }}
+                    >
+                      Copy citation
+                    </button>
+                  </div>
+                </article>;
+            })}
+          </div>
+        </div>
+      </div>
+    </div>;
 }
 
 function ImportantDatesPage() {
