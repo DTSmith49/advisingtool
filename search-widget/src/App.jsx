@@ -3,6 +3,12 @@ import { useAdvisingSearch } from './useAdvisingSearch'
 import { useSourceStatus } from './useSourceStatus'
 import './App.css'
 
+const programs = [
+  { value: null, label: 'All' },
+  { value: 'MIM', label: 'MIM' },
+  { value: 'HCIM', label: 'HCIM' },
+]
+
 function getUrlParams() {
   const params = new URLSearchParams(window.location.search)
   return {
@@ -12,12 +18,6 @@ function getUrlParams() {
     studentName: params.get('studentName') || null,
   }
 }
-
-const programs = [
-  { value: null, label: 'All' },
-  { value: 'MIM', label: 'MIM' },
-  { value: 'HCIM', label: 'HCIM' },
-]
 
 function formatIndexedDate(sources) {
   const timestamps = sources
@@ -145,20 +145,22 @@ export default function App() {
     programs.find((p) => p.value === urlParams.program)?.value ?? null
   )
   const inputRef = useRef(null)
-  const { results, loading, error, hasSearched, search } =
-    useAdvisingSearch()
+  const { results, loading, error, hasSearched, search } = useAdvisingSearch()
   const { sources } = useSourceStatus()
 
   const indexedDate = formatIndexedDate(sources)
-  const contextBanner = [
-    urlParams.studentName ? 'Student: ' + urlParams.studentName : null,
-    urlParams.track ? 'Track: ' + urlParams.track : null,
-    urlParams.thesisTrack ? 'Thesis track' : null,
-  ].filter(Boolean).join(' · ') || null
-
   const programLabel =
-    programs.find((program) => program.value === selectedProgram)?.label ??
-    'All'
+    programs.find((program) => program.value === selectedProgram)?.label ?? 'All'
+
+  const contextBanner = urlParams.studentName || urlParams.track || urlParams.thesisTrack
+    ? [
+        urlParams.studentName ? `Student: ${urlParams.studentName}` : null,
+        urlParams.track ? `Track: ${urlParams.track}` : null,
+        urlParams.thesisTrack ? 'Thesis track' : null,
+      ]
+        .filter(Boolean)
+        .join(' · ')
+    : null
 
   useEffect(() => {
     function handleKeyDown(event) {
@@ -228,7 +230,7 @@ export default function App() {
         </div>
 
         <form className="search-form" onSubmit={handleSubmit}>
-          <label className="sr-only" htmlFor="advising-search">
+          "abel className="sr-only" htmlFor="advising-search">
             Search handbook information
           </label>
 
@@ -300,8 +302,8 @@ export default function App() {
           <div className="empty-state">
             <h2>No results found</h2>
             <p>
-              No {selectedProgram ?? 'program'} handbook sections matched
-              {' '}“{query.trim()}”. Try a broader or different term.
+              No {selectedProgram ?? 'program'} handbook sections matched{' '}
+              "{query.trim()}". Try a broader or different term.
             </p>
           </div>
         )}
@@ -310,8 +312,8 @@ export default function App() {
           <div className="empty-state">
             <h2>Search handbook guidance</h2>
             <p>
-              Start with a topic such as “capstone,” “electives,” “tracks,” or
-              “registration.”
+              Start with a topic such as "capstone," "electives," "tracks," or
+              "registration."
             </p>
           </div>
         )}
