@@ -480,3 +480,23 @@ kbd {
     margin-left: 0;
   }
 }
+
+.context-banner {
+  background: #FFF7ED;
+  border-bottom: 1px solid #FED7AA;
+  color: #92400E;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  padding: 0.5rem 1.5rem;
+  letter-spacing: 0.01em;
+}
+
+.context-banner {
+  background: #FFF7ED;
+  border-bottom: 1px solid #FED7AA;
+  color: #92400E;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  padding: 0.5rem 1.5rem;
+  letter-spacing: 0.01em;
+}

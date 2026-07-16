@@ -3,6 +3,16 @@ import { useAdvisingSearch } from './useAdvisingSearch'
 import { useSourceStatus } from './useSourceStatus'
 import './App.css'
 
+function getUrlParams() {
+  const params = new URLSearchParams(window.location.search)
+  return {
+    program: params.get('program') || null,
+    track: params.get('track') || null,
+    thesisTrack: params.get('thesisTrack') === 'true',
+    studentName: params.get('studentName') || null,
+  }
+}
+
 const programs = [
   { value: null, label: 'All' },
   { value: 'MIM', label: 'MIM' },
@@ -129,14 +139,23 @@ function ResultCard({ result }) {
 }
 
 export default function App() {
+  const urlParams = getUrlParams()
   const [query, setQuery] = useState('')
-  const [selectedProgram, setSelectedProgram] = useState(null)
+  const [selectedProgram, setSelectedProgram] = useState(
+    programs.find((p) => p.value === urlParams.program)?.value ?? null
+  )
   const inputRef = useRef(null)
   const { results, loading, error, hasSearched, search } =
     useAdvisingSearch()
   const { sources } = useSourceStatus()
 
   const indexedDate = formatIndexedDate(sources)
+  const contextBanner = [
+    urlParams.studentName ? 'Student: ' + urlParams.studentName : null,
+    urlParams.track ? 'Track: ' + urlParams.track : null,
+    urlParams.thesisTrack ? 'Thesis track' : null,
+  ].filter(Boolean).join(' · ') || null
+
   const programLabel =
     programs.find((program) => program.value === selectedProgram)?.label ??
     'All'
@@ -191,6 +210,12 @@ export default function App() {
           <span className="topbar__status">Sources indexed {indexedDate}</span>
         )}
       </header>
+
+      {contextBanner && (
+        <div className="context-banner" aria-label="Planner context">
+          {contextBanner}
+        </div>
+      )}
 
       <section className="search-panel" aria-labelledby="page-title">
         <div className="search-panel__copy">
